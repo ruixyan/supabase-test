@@ -23,6 +23,9 @@ async function FlowersData() {
           />
           <h2>{flower.name}</h2>
           <p style={{ fontSize: "14px" }}>{flower.description}</p>
+          <p style={{ fontSize: "12px", color: "gray" }}>🎨 {flower.color}</p>
+          <p style={{ fontSize: "12px", color: "gray" }}>🌤 {flower.season}</p>
+          <p style={{ fontSize: "12px", color: "gray" }}>🌍 {flower.origin}</p>
         </div>
       ))}
     </div>
