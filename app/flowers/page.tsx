@@ -45,7 +45,7 @@ export default function Flowers() {
     borderRadius: "20px",
     border: "1px solid #ccc",
     cursor: "pointer",
-    background: active ? "#4f46e5" : "transparent",
+    background: active ? "#1bdb92" : "transparent",
     color: active ? "white" : "inherit",
   });
 
