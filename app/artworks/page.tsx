@@ -49,8 +49,8 @@ export default function ArtworksPage() {
   const [filtered, setFiltered] = useState<Artwork[]>([]);
   const [activeCategory, setActiveCategory] = useState("All");
   const [activeStatus, setActiveStatus] = useState("All");
-  const [maxPrice, setMaxPrice] = useState(999999);
-  const [artistSearchText, setArtistSearchText] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");  const [artistSearchText, setArtistSearchText] = useState("");
   const [artworkSearchText, setArtworkSearchText] = useState("");
   const [buyerSearchText, setBuyerSearchText] = useState("");
   const [message, setMessage] = useState("");
@@ -142,15 +142,27 @@ export default function ArtworksPage() {
     }
 
     result = result.filter((artwork) => {
-      if (artwork.market_price === null) return false;
-      return artwork.market_price >= 0 && artwork.market_price <= maxPrice;
-    });
+  if (artwork.market_price === null) return false;
+
+  const price = artwork.market_price;
+
+  if (minPrice !== "" && price < Number(minPrice)) {
+    return false;
+  }
+
+  if (maxPrice !== "" && price > Number(maxPrice)) {
+    return false;
+  }
+
+  return true;
+});
 
     setFiltered(result);
   }, [
     artworks,
     activeCategory,
     activeStatus,
+    minPrice,
     maxPrice,
     artistSearchText,
     artworkSearchText,
@@ -319,6 +331,24 @@ export default function ArtworksPage() {
           >
             Switch to Artists
           </Link>
+          <Link
+  href="/clients"
+  style={{
+    display: "block",
+    width: "100%",
+    padding: "10px 12px",
+    border: "1px solid #bdbdbd",
+    background: "white",
+    color: "black",
+    textDecoration: "none",
+    textAlign: "center",
+    fontSize: "13px",
+    boxSizing: "border-box",
+    marginTop: "8px",
+  }}
+>
+  Switch to Clients
+</Link>
         </div>
 
         <input
@@ -351,7 +381,7 @@ export default function ArtworksPage() {
 
         <input
           type="text"
-          placeholder="Search buyer name"
+          placeholder="Search client name"
           value={buyerSearchText}
           onChange={(e) => setBuyerSearchText(e.target.value)}
           style={{
@@ -383,45 +413,6 @@ export default function ArtworksPage() {
 
         <div
           style={{
-            border: "1px solid #bdbdbd",
-            padding: "12px",
-            background: "white",
-          }}
-        >
-          <p
-            style={{
-              margin: "0 0 8px 0",
-              fontSize: "13px",
-              fontWeight: 700,
-            }}
-          >
-            Market Price
-          </p>
-
-          <p
-            style={{
-              margin: "0 0 8px 0",
-              fontSize: "13px",
-            }}
-          >
-            $0 - ${maxPrice.toLocaleString()}
-          </p>
-
-          <input
-            type="range"
-            min="0"
-            max="999999"
-            step="1000"
-            value={maxPrice}
-            onChange={(e) => setMaxPrice(Number(e.target.value))}
-            style={{
-              width: "100%",
-            }}
-          />
-        </div>
-
-        <div
-          style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
             gap: "8px",
@@ -447,6 +438,52 @@ export default function ArtworksPage() {
             </button>
           ))}
         </div>
+        <div
+  style={{
+    border: "1px solid #bdbdbd",
+    padding: "12px",
+    background: "white",
+  }}
+>
+  <p
+    style={{
+      margin: "0 0 12px 0",
+      fontSize: "13px",
+      fontWeight: 700,
+    }}
+  >
+    Market Price
+  </p>
+
+  <input
+    type="number"
+    placeholder="Min"
+    value={minPrice}
+    onChange={(e) => setMinPrice(e.target.value)}
+    style={{
+      width: "100%",
+      padding: "10px 12px",
+      border: "1px solid #bdbdbd",
+      fontSize: "13px",
+      marginBottom: "8px",
+      boxSizing: "border-box",
+    }}
+  />
+
+  <input
+    type="number"
+    placeholder="Max"
+    value={maxPrice}
+    onChange={(e) => setMaxPrice(e.target.value)}
+    style={{
+      width: "100%",
+      padding: "10px 12px",
+      border: "1px solid #bdbdbd",
+      fontSize: "13px",
+      boxSizing: "border-box",
+    }}
+  />
+</div>
       </aside>
     </div>
   );

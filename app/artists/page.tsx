@@ -312,6 +312,24 @@ export default function ArtistsPage() {
           >
             Switch to Artworks
           </Link>
+          <Link
+  href="/clients"
+  style={{
+    display: "block",
+    width: "100%",
+    padding: "10px 12px",
+    border: "1px solid #bdbdbd",
+    background: "white",
+    color: "black",
+    textDecoration: "none",
+    textAlign: "center",
+    fontSize: "13px",
+    boxSizing: "border-box",
+    marginTop: "8px",
+  }}
+>
+  Switch to Clients
+</Link>
         </div>
 
         <input
@@ -344,7 +362,7 @@ export default function ArtistsPage() {
 
         <input
           type="text"
-          placeholder="Search buyer name"
+          placeholder="Search client name"
           value={buyerSearchText}
           onChange={(e) => setBuyerSearchText(e.target.value)}
           style={{
