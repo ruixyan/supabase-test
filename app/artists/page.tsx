@@ -1,6 +1,29 @@
-import { createClient } from "@/lib/supabase/server";
+"use client";
+
+import { createClient } from "@/lib/supabase/client";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+
+type Customer =
+  | {
+      id: number;
+      name: string | null;
+    }
+  | {
+      id: number;
+      name: string | null;
+    }[]
+  | null;
+
+type Artwork = {
+  id: number;
+  title_jp: string | null;
+  title_en: string | null;
+  category: string | null;
+  is_sold: boolean;
+  customers: Customer;
+};
 
 type Artist = {
   id: number;
@@ -10,23 +33,131 @@ type Artist = {
   artist_photo_url: string | null;
   nationality: string | null;
   birth_year: string | null;
+  artworks: Artwork[] | null;
 };
 
-export default async function ArtistsPage() {
-  const supabase = await createClient();
+const categoryOptions = [
+  "All",
+  "Calligraphy",
+  "Origami",
+  "Metalwork",
+  "Ceramics",
+  "Lacquerware",
+];
 
-  const { data: artists, error } = await supabase
-    .from("artists")
-    .select("id, name, name_en, name_jp, artist_photo_url, nationality, birth_year")
-    .order("name_en", { ascending: true });
+export default function ArtistsPage() {
+  const supabase = createClient();
 
-  if (error) {
-    return (
-      <main style={{ padding: "48px 72px" }}>
-        <p>{error.message}</p>
-      </main>
-    );
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [filtered, setFiltered] = useState<Artist[]>([]);
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [artistSearchText, setArtistSearchText] = useState("");
+  const [artworkSearchText, setArtworkSearchText] = useState("");
+  const [buyerSearchText, setBuyerSearchText] = useState("");
+  const [message, setMessage] = useState("");
+
+  async function loadArtists() {
+    const { data, error } = await supabase
+      .from("artists")
+      .select(`
+        id,
+        name,
+        name_en,
+        name_jp,
+        artist_photo_url,
+        nationality,
+        birth_year,
+        artworks (
+          id,
+          title_jp,
+          title_en,
+          category,
+          is_sold,
+          customers (
+            id,
+            name
+          )
+        )
+      `)
+      .order("name_en", { ascending: true });
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    if (data) {
+      setArtists(data);
+      setFiltered(data);
+    }
   }
+
+  useEffect(() => {
+    loadArtists();
+  }, []);
+
+  useEffect(() => {
+    let result = artists;
+
+    if (artistSearchText.trim() !== "") {
+      const search = artistSearchText.trim().toLowerCase();
+
+      result = result.filter((artist) => {
+        const nameEn = artist.name_en?.toLowerCase() || "";
+        const name = artist.name?.toLowerCase() || "";
+        const nameJp = artist.name_jp?.toLowerCase() || "";
+
+        return (
+          nameEn.includes(search) ||
+          name.includes(search) ||
+          nameJp.includes(search)
+        );
+      });
+    }
+
+    if (artworkSearchText.trim() !== "") {
+      const search = artworkSearchText.trim().toLowerCase();
+
+      result = result.filter((artist) =>
+        artist.artworks?.some((artwork) => {
+          const titleEn = artwork.title_en?.toLowerCase() || "";
+          const titleJp = artwork.title_jp?.toLowerCase() || "";
+
+          return titleEn.includes(search) || titleJp.includes(search);
+        })
+      );
+    }
+
+    if (buyerSearchText.trim() !== "") {
+      const search = buyerSearchText.trim().toLowerCase();
+
+      result = result.filter((artist) =>
+        artist.artworks?.some((artwork) => {
+          const customer = Array.isArray(artwork.customers)
+            ? artwork.customers[0]
+            : artwork.customers;
+
+          const buyerName = customer?.name?.toLowerCase() || "";
+
+          return buyerName.includes(search);
+        })
+      );
+    }
+
+    if (activeCategory !== "All") {
+      result = result.filter((artist) =>
+        artist.artworks?.some((artwork) => artwork.category === activeCategory)
+      );
+    }
+
+    setFiltered(result);
+  }, [
+    artists,
+    activeCategory,
+    artistSearchText,
+    artworkSearchText,
+    buyerSearchText,
+  ]);
 
   return (
     <div
@@ -41,7 +172,11 @@ export default async function ArtistsPage() {
       }}
     >
       <main>
-        {!artists || artists.length === 0 ? (
+        {message && (
+          <p style={{ marginBottom: "20px", color: "#9c1515" }}>{message}</p>
+        )}
+
+        {filtered.length === 0 ? (
           <p>No artists found.</p>
         ) : (
           <div
@@ -52,9 +187,12 @@ export default async function ArtistsPage() {
               alignItems: "start",
             }}
           >
-            {artists.map((artist: Artist) => {
+            {filtered.map((artist) => {
               const displayName =
-                artist.name_en || artist.name || artist.name_jp || "Untitled Artist";
+                artist.name_en ||
+                artist.name ||
+                artist.name_jp ||
+                "Untitled Artist";
 
               return (
                 <Link
@@ -143,6 +281,7 @@ export default async function ArtistsPage() {
           style={{
             border: "1px solid #bdbdbd",
             padding: "14px",
+            marginBottom: "8px",
             background: "#fafafa",
           }}
         >
@@ -174,6 +313,66 @@ export default async function ArtistsPage() {
             Switch to Artworks
           </Link>
         </div>
+
+        <input
+          type="text"
+          placeholder="Search artist name"
+          value={artistSearchText}
+          onChange={(e) => setArtistSearchText(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "10px 12px",
+            border: "1px solid #bdbdbd",
+            fontSize: "13px",
+            outline: "none",
+          }}
+        />
+
+        <input
+          type="text"
+          placeholder="Search artwork name"
+          value={artworkSearchText}
+          onChange={(e) => setArtworkSearchText(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "10px 12px",
+            border: "1px solid #bdbdbd",
+            fontSize: "13px",
+            outline: "none",
+          }}
+        />
+
+        <input
+          type="text"
+          placeholder="Search buyer name"
+          value={buyerSearchText}
+          onChange={(e) => setBuyerSearchText(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "10px 12px",
+            border: "1px solid #bdbdbd",
+            fontSize: "13px",
+            outline: "none",
+          }}
+        />
+
+        <select
+          value={activeCategory}
+          onChange={(e) => setActiveCategory(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "10px 12px",
+            border: "1px solid #bdbdbd",
+            background: "white",
+            fontSize: "13px",
+          }}
+        >
+          {categoryOptions.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
       </aside>
     </div>
   );
