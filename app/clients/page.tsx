@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import ArtworkFilterPanel from "@/app/components/ArtworkFilterPanel";
 
 type Artwork = {
   id: number;
@@ -23,23 +24,17 @@ type Client = {
   artworks: Artwork[] | null;
 };
 
-const categoryOptions = [
-  "All",
-  "Calligraphy",
-  "Origami",
-  "Metalwork",
-  "Ceramics",
-  "Lacquerware",
-];
-
 export default function ClientsPage() {
   const supabase = createClient();
 
   const [clients, setClients] = useState<Client[]>([]);
   const [filtered, setFiltered] = useState<Client[]>([]);
-  const [clientSearchText, setClientSearchText] = useState("");
+
+  const [artistSearchText, setArtistSearchText] = useState("");
   const [artworkSearchText, setArtworkSearchText] = useState("");
+  const [buyerSearchText, setBuyerSearchText] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
+
   const [message, setMessage] = useState("");
 
   async function loadClients() {
@@ -81,8 +76,8 @@ export default function ClientsPage() {
   useEffect(() => {
     let result = clients;
 
-    if (clientSearchText.trim() !== "") {
-      const search = clientSearchText.trim().toLowerCase();
+    if (buyerSearchText.trim() !== "") {
+      const search = buyerSearchText.trim().toLowerCase();
 
       result = result.filter((client) => {
         const name = client.name?.toLowerCase() || "";
@@ -117,7 +112,7 @@ export default function ClientsPage() {
     }
 
     setFiltered(result);
-  }, [clients, clientSearchText, artworkSearchText, activeCategory]);
+  }, [clients, buyerSearchText, artworkSearchText, activeCategory]);
 
   return (
     <div
@@ -150,7 +145,7 @@ export default function ClientsPage() {
             {filtered.map((client) => (
               <Link
                 key={client.id}
-                href={`/customers/${client.id}`}
+                href={`/clients/${client.id}`}
                 style={{
                   textDecoration: "none",
                   color: "inherit",
@@ -196,117 +191,20 @@ export default function ClientsPage() {
         )}
       </main>
 
-      <aside
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          position: "sticky",
-          top: "48px",
-        }}
-      >
-        <div
-          style={{
-            border: "1px solid #bdbdbd",
-            padding: "14px",
-            marginBottom: "8px",
-            background: "#fafafa",
-          }}
-        >
-          <p
-            style={{
-              margin: "0 0 10px 0",
-              fontSize: "13px",
-              fontWeight: 700,
-            }}
-          >
-            View Mode
-          </p>
-
-          <Link
-            href="/artworks"
-            style={{
-              display: "block",
-              width: "100%",
-              padding: "10px 12px",
-              border: "1px solid #9c1515",
-              background: "#9c1515",
-              color: "white",
-              textDecoration: "none",
-              textAlign: "center",
-              fontSize: "13px",
-              boxSizing: "border-box",
-              marginBottom: "8px",
-            }}
-          >
-            Switch to Artworks
-          </Link>
-
-          <Link
-            href="/artists"
-            style={{
-              display: "block",
-              width: "100%",
-              padding: "10px 12px",
-              border: "1px solid #bdbdbd",
-              background: "white",
-              color: "black",
-              textDecoration: "none",
-              textAlign: "center",
-              fontSize: "13px",
-              boxSizing: "border-box",
-            }}
-          >
-            Switch to Artists
-          </Link>
-        </div>
-
-        <input
-          type="text"
-          placeholder="Search client name"
-          value={clientSearchText}
-          onChange={(e) => setClientSearchText(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            border: "1px solid #bdbdbd",
-            fontSize: "13px",
-            outline: "none",
-          }}
-        />
-
-        <input
-          type="text"
-          placeholder="Search artwork name"
-          value={artworkSearchText}
-          onChange={(e) => setArtworkSearchText(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            border: "1px solid #bdbdbd",
-            fontSize: "13px",
-            outline: "none",
-          }}
-        />
-
-        <select
-          value={activeCategory}
-          onChange={(e) => setActiveCategory(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            border: "1px solid #bdbdbd",
-            background: "white",
-            fontSize: "13px",
-          }}
-        >
-          {categoryOptions.map((category) => (
-            <option key={category} value={category}>
-              {category}
-            </option>
-          ))}
-        </select>
-      </aside>
+      <ArtworkFilterPanel
+        currentMode="clients"
+        artistSearchText={artistSearchText}
+        setArtistSearchText={setArtistSearchText}
+        artworkSearchText={artworkSearchText}
+        setArtworkSearchText={setArtworkSearchText}
+        buyerSearchText={buyerSearchText}
+        setBuyerSearchText={setBuyerSearchText}
+        activeCategory={activeCategory}
+        setActiveCategory={setActiveCategory}
+        showCategory={false}
+        showStatus={false}
+        showPrice={false}
+      />
     </div>
   );
 }

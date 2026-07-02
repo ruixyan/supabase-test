@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
 
 type Artist = {
   id: number;
@@ -22,27 +23,20 @@ type Artwork = {
   id: number;
   artist_id: number | null;
   artist_name: string | null;
-
   title_jp: string;
   title_en: string | null;
-
   artwork_photo_url: string | null;
   artist_photo_url: string | null;
-
   extra_photo_link: string | null;
   fact_sheet_link: string | null;
-
   year: string | null;
   material: string | null;
   dimensions: string | null;
   category: string | null;
-
   is_sold: boolean;
   buyer_id: number | null;
-
   market_price: number | null;
   cost: number | null;
-
   artists: Artist[] | Artist | null;
   customers: Customer[] | Customer | null;
 };
@@ -132,6 +126,10 @@ export default function ArtworkDetailPage() {
 
   const artistHref = artwork.artist_id ? `/artists/${artwork.artist_id}` : "#";
 
+  const titleText = `${artwork.title_en || artwork.title_jp}${
+    artwork.year ? `, ${artwork.year}` : ""
+  }`;
+
   const marketPriceText =
     artwork.market_price !== null
       ? `$${artwork.market_price.toLocaleString()}`
@@ -140,24 +138,51 @@ export default function ArtworkDetailPage() {
   const costText =
     artwork.cost !== null ? `￥${artwork.cost.toLocaleString()}` : "";
 
-  const copyText = `${artistDisplayName}
+  function escapeHtml(text: string) {
+    return text
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;");
+  }
 
-${artwork.title_en || artwork.title_jp}${artwork.year ? `, ${artwork.year}` : ""}
+  function markdownToHtml(text: string) {
+    return escapeHtml(text)
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.*?)\*/g, "<em>$1</em>");
+  }
 
-${artwork.material || ""}
+  function stripMarkdown(text: string) {
+    return text.replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1");
+  }
 
+  const plainText = `${artistDisplayName}
+${stripMarkdown(titleText)}
+${stripMarkdown(artwork.material || "")}
 ${artwork.dimensions || ""}
-
 ${marketPriceText}
 
-
-
 Gallery Price: ${marketPriceText}
-
 Cost: ${costText}`;
 
+  const htmlText = `
+<div><strong>${escapeHtml(artistDisplayName)}</strong></div>
+<div>${markdownToHtml(titleText)}</div>
+<div>${markdownToHtml(artwork.material || "")}</div>
+<div>${escapeHtml(artwork.dimensions || "")}</div>
+<div>${escapeHtml(marketPriceText)}</div>
+<br>
+<div>Gallery Price: ${escapeHtml(marketPriceText)}</div>
+<div>Cost: ${escapeHtml(costText)}</div>
+`;
+
   async function copyArtworkInfo() {
-    await navigator.clipboard.writeText(copyText);
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "text/plain": new Blob([plainText], { type: "text/plain" }),
+        "text/html": new Blob([htmlText], { type: "text/html" }),
+      }),
+    ]);
+
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   }
@@ -198,7 +223,11 @@ Cost: ${costText}`;
         </div>
 
         <div>
-          <h1>{artwork.title_en || artwork.title_jp}</h1>
+          <h1>
+            <ReactMarkdown components={{ p: ({ children }) => <>{children}</> }}>
+              {artwork.title_en || artwork.title_jp}
+            </ReactMarkdown>
+          </h1>
 
           {artwork.title_en && <p>{artwork.title_jp}</p>}
 
@@ -225,7 +254,10 @@ Cost: ${costText}`;
 
           {artwork.material && (
             <p>
-              <strong>Material:</strong> {artwork.material}
+              <strong>Material:</strong>{" "}
+              <ReactMarkdown components={{ p: ({ children }) => <>{children}</> }}>
+                {artwork.material}
+              </ReactMarkdown>
             </p>
           )}
 
@@ -304,12 +336,12 @@ Cost: ${costText}`;
                 background: "#fafafa",
               }}
             >
-              <h3 style={{ marginTop: 0 }}>Buyer</h3>
+              <h3 style={{ marginTop: 0, fontWeight: 700 }}>Client</h3>
 
               {customer ? (
-                <Link href={`/customers/${customer.id}`}>{customer.name}</Link>
+                <Link href={`/clients/${customer.id}`}>{customer.name}</Link>
               ) : (
-                <p>Unknown buyer</p>
+                <p>Unknown client</p>
               )}
             </div>
           )}
@@ -324,31 +356,36 @@ Cost: ${costText}`;
           background: "#fafafa",
         }}
       >
-        <h2 style={{ marginTop: 0 }}>Copy Artwork Information</h2>
-
         <div
           style={{
-            whiteSpace: "pre-wrap",
             lineHeight: 1.7,
             marginBottom: "20px",
           }}
         >
-          <strong>{artistDisplayName}</strong>
-          {"\n\n"}
-          <em>
-            {artwork.title_en || artwork.title_jp}
-            {artwork.year ? `, ${artwork.year}` : ""}
-          </em>
-          {"\n\n"}
-          {artwork.material}
-          {"\n\n"}
-          {artwork.dimensions}
-          {"\n\n"}
-          {marketPriceText}
-          {"\n\n\n"}
-          Gallery Price: {marketPriceText}
-          {"\n\n"}
-          Cost: {costText}
+          <div>
+            <strong>{artistDisplayName}</strong>
+          </div>
+
+          <div>
+            <ReactMarkdown components={{ p: ({ children }) => <>{children}</> }}>
+              {titleText}
+            </ReactMarkdown>
+          </div>
+
+          <div>
+            <ReactMarkdown components={{ p: ({ children }) => <>{children}</> }}>
+              {artwork.material || ""}
+            </ReactMarkdown>
+          </div>
+
+          <div>{artwork.dimensions}</div>
+          <div>{marketPriceText}</div>
+
+          <div style={{ marginTop: "20px" }}>
+            Gallery Price: {marketPriceText}
+            <br />
+            Cost: {costText}
+          </div>
         </div>
 
         <button

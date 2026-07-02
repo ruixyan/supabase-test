@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import ArtworkFilterPanel from "@/app/components/ArtworkFilterPanel";
+import ReactMarkdown from "react-markdown";
 
 type Customer =
   | {
@@ -50,7 +52,8 @@ export default function ArtworksPage() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [activeStatus, setActiveStatus] = useState("All");
   const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");  const [artistSearchText, setArtistSearchText] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [artistSearchText, setArtistSearchText] = useState("");
   const [artworkSearchText, setArtworkSearchText] = useState("");
   const [buyerSearchText, setBuyerSearchText] = useState("");
   const [message, setMessage] = useState("");
@@ -235,20 +238,32 @@ export default function ArtworksPage() {
                 </h2>
 
                 <p style={{ margin: "0", fontSize: "15px", lineHeight: 1.4 }}>
-                  {artwork.title_en || artwork.title_jp}
-                </p>
+  <ReactMarkdown
+    components={{
+      p: ({ children }) => <>{children}</>,
+    }}
+  >
+    {artwork.title_en || artwork.title_jp}
+  </ReactMarkdown>
+</p>
 
                 {artwork.title_en && artwork.title_jp && (
                   <p
-                    style={{
-                      margin: "0",
-                      fontSize: "14px",
-                      lineHeight: 1.4,
-                      color: "#555",
-                    }}
-                  >
-                    {artwork.title_jp}
-                  </p>
+  style={{
+    margin: "0",
+    fontSize: "14px",
+    lineHeight: 1.4,
+    color: "#555",
+  }}
+>
+  <ReactMarkdown
+    components={{
+      p: ({ children }) => <>{children}</>,
+    }}
+  >
+    {artwork.title_jp}
+  </ReactMarkdown>
+</p>
                 )}
 
                 {artwork.year && (
@@ -292,199 +307,23 @@ export default function ArtworksPage() {
           </div>
         )}
       </main>
-
-      <aside
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          position: "sticky",
-          top: "48px",
-        }}
-      >
-        <div
-          style={{
-            border: "1px solid #bdbdbd",
-            padding: "14px",
-            marginBottom: "8px",
-            background: "#fafafa",
-          }}
-        >
-          <p style={{ margin: "0 0 10px 0", fontSize: "13px", fontWeight: 700 }}>
-            View Mode
-          </p>
-
-          <Link
-            href="/artists"
-            style={{
-              display: "block",
-              width: "100%",
-              padding: "10px 12px",
-              border: "1px solid #9c1515",
-              background: "#9c1515",
-              color: "white",
-              textDecoration: "none",
-              textAlign: "center",
-              fontSize: "13px",
-              boxSizing: "border-box",
-            }}
-          >
-            Switch to Artists
-          </Link>
-          <Link
-  href="/clients"
-  style={{
-    display: "block",
-    width: "100%",
-    padding: "10px 12px",
-    border: "1px solid #bdbdbd",
-    background: "white",
-    color: "black",
-    textDecoration: "none",
-    textAlign: "center",
-    fontSize: "13px",
-    boxSizing: "border-box",
-    marginTop: "8px",
-  }}
->
-  Switch to Clients
-</Link>
-        </div>
-
-        <input
-          type="text"
-          placeholder="Search artist name"
-          value={artistSearchText}
-          onChange={(e) => setArtistSearchText(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            border: "1px solid #bdbdbd",
-            fontSize: "13px",
-            outline: "none",
-          }}
-        />
-
-        <input
-          type="text"
-          placeholder="Search artwork name"
-          value={artworkSearchText}
-          onChange={(e) => setArtworkSearchText(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            border: "1px solid #bdbdbd",
-            fontSize: "13px",
-            outline: "none",
-          }}
-        />
-
-        <input
-          type="text"
-          placeholder="Search client name"
-          value={buyerSearchText}
-          onChange={(e) => setBuyerSearchText(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            border: "1px solid #bdbdbd",
-            fontSize: "13px",
-            outline: "none",
-          }}
-        />
-
-        <select
-          value={activeCategory}
-          onChange={(e) => setActiveCategory(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            border: "1px solid #bdbdbd",
-            background: "white",
-            fontSize: "13px",
-          }}
-        >
-          {categoryOptions.map((category) => (
-            <option key={category} value={category}>
-              {category}
-            </option>
-          ))}
-        </select>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "8px",
-          }}
-        >
-          {["Available", "Sold"].map((status) => (
-            <button
-              key={status}
-              type="button"
-              onClick={() =>
-                setActiveStatus(activeStatus === status ? "All" : status)
-              }
-              style={{
-                padding: "10px 12px",
-                border: "1px solid #bdbdbd",
-                background: activeStatus === status ? "#9c1515" : "white",
-                color: activeStatus === status ? "white" : "black",
-                cursor: "pointer",
-                fontSize: "13px",
-              }}
-            >
-              {status}
-            </button>
-          ))}
-        </div>
-        <div
-  style={{
-    border: "1px solid #bdbdbd",
-    padding: "12px",
-    background: "white",
-  }}
->
-  <p
-    style={{
-      margin: "0 0 12px 0",
-      fontSize: "13px",
-      fontWeight: 700,
-    }}
-  >
-    Market Price
-  </p>
-
-  <input
-    type="number"
-    placeholder="Min"
-    value={minPrice}
-    onChange={(e) => setMinPrice(e.target.value)}
-    style={{
-      width: "100%",
-      padding: "10px 12px",
-      border: "1px solid #bdbdbd",
-      fontSize: "13px",
-      marginBottom: "8px",
-      boxSizing: "border-box",
-    }}
-  />
-
-  <input
-    type="number"
-    placeholder="Max"
-    value={maxPrice}
-    onChange={(e) => setMaxPrice(e.target.value)}
-    style={{
-      width: "100%",
-      padding: "10px 12px",
-      border: "1px solid #bdbdbd",
-      fontSize: "13px",
-      boxSizing: "border-box",
-    }}
-  />
-</div>
-      </aside>
+      <ArtworkFilterPanel
+  currentMode="artworks"
+  artistSearchText={artistSearchText}
+  setArtistSearchText={setArtistSearchText}
+  artworkSearchText={artworkSearchText}
+  setArtworkSearchText={setArtworkSearchText}
+  buyerSearchText={buyerSearchText}
+  setBuyerSearchText={setBuyerSearchText}
+  activeCategory={activeCategory}
+  setActiveCategory={setActiveCategory}
+  activeStatus={activeStatus}
+  setActiveStatus={setActiveStatus}
+  minPrice={minPrice}
+  setMinPrice={setMinPrice}
+  maxPrice={maxPrice}
+  setMaxPrice={setMaxPrice}
+/>
     </div>
   );
 }

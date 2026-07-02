@@ -5,6 +5,9 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+import ArtworkFilterPanel from "@/app/components/ArtworkFilterPanel";
+import ViewModePanel from "@/app/components/ViewModePanel";
+
 type Customer =
   | {
       id: number;
@@ -267,131 +270,33 @@ export default function ArtistsPage() {
           </div>
         )}
       </main>
+<ArtworkFilterPanel
+  currentMode="artists"
 
-      <aside
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          position: "sticky",
-          top: "48px",
-        }}
-      >
-        <div
-          style={{
-            border: "1px solid #bdbdbd",
-            padding: "14px",
-            marginBottom: "8px",
-            background: "#fafafa",
-          }}
-        >
-          <p
-            style={{
-              margin: "0 0 10px 0",
-              fontSize: "13px",
-              fontWeight: 700,
-            }}
-          >
-            View Mode
-          </p>
+  artistSearchText={artistSearchText}
+  setArtistSearchText={setArtistSearchText}
 
-          <Link
-            href="/artworks"
-            style={{
-              display: "block",
-              width: "100%",
-              padding: "10px 12px",
-              border: "1px solid #9c1515",
-              background: "#9c1515",
-              color: "white",
-              textDecoration: "none",
-              textAlign: "center",
-              fontSize: "13px",
-              boxSizing: "border-box",
-            }}
-          >
-            Switch to Artworks
-          </Link>
-          <Link
-  href="/clients"
-  style={{
-    display: "block",
-    width: "100%",
-    padding: "10px 12px",
-    border: "1px solid #bdbdbd",
-    background: "white",
-    color: "black",
-    textDecoration: "none",
-    textAlign: "center",
-    fontSize: "13px",
-    boxSizing: "border-box",
-    marginTop: "8px",
-  }}
->
-  Switch to Clients
-</Link>
-        </div>
+  artworkSearchText={artworkSearchText}
+  setArtworkSearchText={setArtworkSearchText}
 
-        <input
-          type="text"
-          placeholder="Search artist name"
-          value={artistSearchText}
-          onChange={(e) => setArtistSearchText(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            border: "1px solid #bdbdbd",
-            fontSize: "13px",
-            outline: "none",
-          }}
-        />
+  buyerSearchText={buyerSearchText}
+  setBuyerSearchText={setBuyerSearchText}
 
-        <input
-          type="text"
-          placeholder="Search artwork name"
-          value={artworkSearchText}
-          onChange={(e) => setArtworkSearchText(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            border: "1px solid #bdbdbd",
-            fontSize: "13px",
-            outline: "none",
-          }}
-        />
+  activeCategory={activeCategory}
+  setActiveCategory={setActiveCategory}
 
-        <input
-          type="text"
-          placeholder="Search client name"
-          value={buyerSearchText}
-          onChange={(e) => setBuyerSearchText(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            border: "1px solid #bdbdbd",
-            fontSize: "13px",
-            outline: "none",
-          }}
-        />
+  activeStatus="All"
+  setActiveStatus={() => {}}
 
-        <select
-          value={activeCategory}
-          onChange={(e) => setActiveCategory(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            border: "1px solid #bdbdbd",
-            background: "white",
-            fontSize: "13px",
-          }}
-        >
-          {categoryOptions.map((category) => (
-            <option key={category} value={category}>
-              {category}
-            </option>
-          ))}
-        </select>
-      </aside>
+  minPrice=""
+  setMinPrice={() => {}}
+
+  maxPrice=""
+  setMaxPrice={() => {}}
+  showCategory={false}
+  showStatus={false}
+  showPrice={false}
+/>
     </div>
   );
 }
