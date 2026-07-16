@@ -272,27 +272,16 @@ export default function ArtistsPage() {
       </main>
 <ArtworkFilterPanel
   currentMode="artists"
-
+  addNewLabel="Add Artist"
+  addNewHref="/artists/new"
   artistSearchText={artistSearchText}
   setArtistSearchText={setArtistSearchText}
-
   artworkSearchText={artworkSearchText}
   setArtworkSearchText={setArtworkSearchText}
-
   buyerSearchText={buyerSearchText}
   setBuyerSearchText={setBuyerSearchText}
-
   activeCategory={activeCategory}
   setActiveCategory={setActiveCategory}
-
-  activeStatus="All"
-  setActiveStatus={() => {}}
-
-  minPrice=""
-  setMinPrice={() => {}}
-
-  maxPrice=""
-  setMaxPrice={() => {}}
   showCategory={false}
   showStatus={false}
   showPrice={false}

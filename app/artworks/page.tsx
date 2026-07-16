@@ -309,6 +309,8 @@ export default function ArtworksPage() {
       </main>
       <ArtworkFilterPanel
   currentMode="artworks"
+  addNewLabel="Add Artwork"
+  addNewHref="/artworks/new"
   artistSearchText={artistSearchText}
   setArtistSearchText={setArtistSearchText}
   artworkSearchText={artworkSearchText}

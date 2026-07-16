@@ -193,6 +193,8 @@ export default function ClientsPage() {
 
       <ArtworkFilterPanel
         currentMode="clients"
+        addNewLabel="Add Client"
+        addNewHref="/clients/new"
         artistSearchText={artistSearchText}
         setArtistSearchText={setArtistSearchText}
         artworkSearchText={artworkSearchText}
@@ -201,6 +203,7 @@ export default function ClientsPage() {
         setBuyerSearchText={setBuyerSearchText}
         activeCategory={activeCategory}
         setActiveCategory={setActiveCategory}
+        showArtistSearch={false}
         showCategory={false}
         showStatus={false}
         showPrice={false}

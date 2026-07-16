@@ -1,3 +1,6 @@
+"use client";
+
+import Link from "next/link";
 import ViewModePanel from "@/app/components/ViewModePanel";
 
 type Props = {
@@ -15,8 +18,6 @@ type Props = {
   activeCategory: string;
   setActiveCategory: (value: string) => void;
 
-  showCategory?: boolean;
-
   activeStatus?: string;
   setActiveStatus?: (value: string) => void;
 
@@ -26,8 +27,15 @@ type Props = {
   maxPrice?: string;
   setMaxPrice?: (value: string) => void;
 
+  showArtistSearch?: boolean;
+  showArtworkSearch?: boolean;
+  showClientSearch?: boolean;
+  showCategory?: boolean;
   showStatus?: boolean;
   showPrice?: boolean;
+
+  addNewLabel?: string;
+  addNewHref?: string;
 };
 
 const categoryOptions = [
@@ -72,9 +80,15 @@ export default function ArtworkFilterPanel({
   maxPrice = "",
   setMaxPrice = () => {},
 
+  showArtistSearch = true,
+  showArtworkSearch = true,
+  showClientSearch = true,
+  showCategory = true,
   showStatus = true,
   showPrice = true,
-  showCategory = true,
+
+  addNewLabel,
+  addNewHref,
 }: Props) {
   return (
     <aside
@@ -88,46 +102,73 @@ export default function ArtworkFilterPanel({
     >
       <ViewModePanel current={currentMode} />
 
-      <input
-        type="text"
-        placeholder="Search artist name"
-        value={artistSearchText}
-        onChange={(e) => setArtistSearchText(e.target.value)}
-        style={inputStyle}
-      />
-
-      <input
-        type="text"
-        placeholder="Search artwork name"
-        value={artworkSearchText}
-        onChange={(e) => setArtworkSearchText(e.target.value)}
-        style={inputStyle}
-      />
-
-      <input
-        type="text"
-        placeholder="Search client name"
-        value={buyerSearchText}
-        onChange={(e) => setBuyerSearchText(e.target.value)}
-        style={inputStyle}
-      />
-
-      {showCategory && (
-  <select
-    value={activeCategory}
-    onChange={(e) => setActiveCategory(e.target.value)}
+      {addNewLabel && addNewHref && (
+  <Link
+    href={addNewHref}
     style={{
-      ...inputStyle,
+      display: "block",
+      width: "100%",
+      padding: "10px 12px",
+      border: "1px solid #9c1515",
       background: "white",
+      color: "#9c1515",
+      textDecoration: "none",
+      textAlign: "center",
+      fontSize: "13px",
+      fontWeight: 600,
+      boxSizing: "border-box",
     }}
   >
-    {categoryOptions.map((category) => (
-      <option key={category} value={category}>
-        {category}
-      </option>
-    ))}
-  </select>
+    {addNewLabel}
+  </Link>
 )}
+
+      {showArtistSearch && (
+        <input
+          type="text"
+          placeholder="Search artist name"
+          value={artistSearchText}
+          onChange={(event) => setArtistSearchText(event.target.value)}
+          style={inputStyle}
+        />
+      )}
+
+      {showArtworkSearch && (
+        <input
+          type="text"
+          placeholder="Search artwork name"
+          value={artworkSearchText}
+          onChange={(event) => setArtworkSearchText(event.target.value)}
+          style={inputStyle}
+        />
+      )}
+
+      {showClientSearch && (
+        <input
+          type="text"
+          placeholder="Search client name"
+          value={buyerSearchText}
+          onChange={(event) => setBuyerSearchText(event.target.value)}
+          style={inputStyle}
+        />
+      )}
+
+      {showCategory && (
+        <select
+          value={activeCategory}
+          onChange={(event) => setActiveCategory(event.target.value)}
+          style={{
+            ...inputStyle,
+            background: "white",
+          }}
+        >
+          {categoryOptions.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+      )}
 
       {showStatus && (
         <div
@@ -137,25 +178,29 @@ export default function ArtworkFilterPanel({
             gap: "8px",
           }}
         >
-          {["Available", "Sold"].map((status) => (
-            <button
-              key={status}
-              type="button"
-              onClick={() =>
-                setActiveStatus(activeStatus === status ? "All" : status)
-              }
-              style={{
-                padding: "10px 12px",
-                border: "1px solid #bdbdbd",
-                background: activeStatus === status ? "#9c1515" : "white",
-                color: activeStatus === status ? "white" : "black",
-                cursor: "pointer",
-                fontSize: "13px",
-              }}
-            >
-              {status}
-            </button>
-          ))}
+          {["Available", "Sold"].map((status) => {
+            const isActive = activeStatus === status;
+
+            return (
+              <button
+                key={status}
+                type="button"
+                onClick={() =>
+                  setActiveStatus(isActive ? "All" : status)
+                }
+                style={{
+                  padding: "10px 12px",
+                  border: "1px solid #bdbdbd",
+                  background: isActive ? "#9c1515" : "white",
+                  color: isActive ? "white" : "black",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                }}
+              >
+                {status}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -179,9 +224,10 @@ export default function ArtworkFilterPanel({
 
           <input
             type="number"
+            min="0"
             placeholder="Min"
             value={minPrice}
-            onChange={(e) => setMinPrice(e.target.value)}
+            onChange={(event) => setMinPrice(event.target.value)}
             style={{
               ...inputStyle,
               marginBottom: "8px",
@@ -190,9 +236,10 @@ export default function ArtworkFilterPanel({
 
           <input
             type="number"
+            min="0"
             placeholder="Max"
             value={maxPrice}
-            onChange={(e) => setMaxPrice(e.target.value)}
+            onChange={(event) => setMaxPrice(event.target.value)}
             style={inputStyle}
           />
         </div>
