@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "kanmbejtvkwifhibskow.supabase.co",
       },
+      {
+        protocol: "https",
+        hostname: "static-assets.artlogic.net",
+      },
     ],
   },
 };

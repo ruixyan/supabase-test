@@ -66,3 +66,137 @@
     @apply bg-background text-foreground;
   }
 }
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: sticky;
+  top: 48px;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: static;
+    width: 100%;
+  }
+}
+
+.artworks-layout, .artists-layout {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 48px;
+  padding: 48px 72px;
+  max-width: 1600px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .artworks-layout {
+    grid-template-columns: 1fr;
+    padding: 24px 16px;
+  }
+}
+
+/* for mobile */
+
+.artworks-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 56px 48px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .artworks-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* for mobile */
+
+.artwork-detail-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 56px;
+  margin-top: 20px;
+  margin-bottom: 48px;
+}
+
+.artwork-detail-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 72px;
+}
+
+
+@media (max-width: 768px) {
+  .artwork-detail-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .artwork-detail-main {
+    padding: 24px 16px;
+  }
+}
+
+.artist-detail-main {
+  padding: 48px 72px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.artist-detail-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 48px;
+  margin-bottom: 64px;
+}
+
+.artist-works-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  gap: 56px 48px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .artist-detail-main {
+    padding: 24px 16px;
+  }
+
+  .artist-detail-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .artist-works-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 72px;
+  border-bottom: 1px solid #ddd;
+  background: white;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 32px;
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 16px 20px;
+  }
+
+  .navbar-links {
+    gap: 16px;
+  }
+}

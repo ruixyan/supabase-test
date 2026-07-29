@@ -373,7 +373,7 @@ export default function ArtistDetailPage() {
         <Link
           href="/artists"
           style={{
-            color: "black",
+            color: "#9c1515",
             textDecoration: "none",
           }}
         >
@@ -390,20 +390,14 @@ export default function ArtistDetailPage() {
     "Untitled Artist";
 
   return (
-    <main
-      style={{
-        padding: "48px 72px",
-        maxWidth: "1400px",
-        margin: "0 auto",
-      }}
-    >
+    <main className="artist-detail-main">
       <Link
         href="/artists"
         style={{
           display: "inline-block",
-          color: "black",
+          color: "#9c1515",
           textDecoration: "none",
-          marginBottom: "32px",
+          marginBottom: "32px"
         }}
       >
         ← Back to artists
@@ -411,21 +405,20 @@ export default function ArtistDetailPage() {
 
       {!isEditing ? (
         <>
-          <section
-            style={{
-              display: "grid",
-              gridTemplateColumns: "320px 1fr",
-              gap: "48px",
-              marginBottom: "64px",
-            }}
-          >
+          <section className="artist-detail-grid">
             <div>
               {artist.artist_photo_url && (
                 <div
+                  // style={{
+                  //   position: "relative",
+                  //   width: "320px",
+                  //   height: "320px",
+                  //   background: "#f3f3f3",
+                  // }}
                   style={{
                     position: "relative",
-                    width: "320px",
-                    height: "320px",
+                    width: "100%",
+                    aspectRatio: "1 / 1",
                     background: "#f3f3f3",
                   }}
                 >
@@ -446,23 +439,26 @@ export default function ArtistDetailPage() {
                   justifyContent: "space-between",
                   alignItems: "flex-start",
                   gap: "24px",
+                  marginBottom: "24px",
                 }}
               >
                 <div>
-                  <h1 style={{ marginTop: 0 }}>{displayName}</h1>
+                  <h1 style={{ marginTop: 0, fontSize: "24px", fontWeight: 700 }}>{displayName}</h1>
 
                   {artist.name_jp &&
                     artist.name_jp !== displayName && (
-                      <p>{artist.name_jp}</p>
+                      <p style={{ marginTop: 0, fontSize: "24px", fontWeight: 700, color: "#666" }}>{artist.name_jp}</p>
                     )}
 
-                  {(artist.nationality || artist.birth_year) && (
+                  {/* {(artist.nationality || artist.birth_year) && (
                     <p>
                       {[artist.nationality, artist.birth_year]
                         .filter(Boolean)
-                        .join(", ")}
+                        .join(", b. ")}
                     </p>
-                  )}
+                  )} */}
+                  <h3 style={{ marginTop: 0, fontSize: "16px", fontWeight: 400, color: "#666" }}>{"b. " + artist.birth_year}</h3>
+
                 </div>
 
                 <button
@@ -486,6 +482,8 @@ export default function ArtistDetailPage() {
               </div>
 
               {artist.bio && (
+                <div>
+                <h3 style ={{ marginBottom: "8px", fontSize: "16px", fontWeight: 600}}>Description</h3>
                 <p
                   style={{
                     whiteSpace: "pre-wrap",
@@ -494,20 +492,21 @@ export default function ArtistDetailPage() {
                 >
                   {artist.bio}
                 </p>
+              </div>
               )}
 
-              {artist.selected_exhibitions && (
+              {/* {artist.selected_exhibitions && (
                 <div style={{ marginTop: "28px" }}>
                   <h3>Selected Exhibitions</h3>
                   <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
                     {artist.selected_exhibitions}
                   </p>
                 </div>
-              )}
+              )} */}
 
               {artist.selected_public_collections && (
                 <div style={{ marginTop: "28px" }}>
-                  <h3>Selected Public Collections</h3>
+                  <h3 style ={{ marginBottom: "12px", fontSize: "16px", fontWeight: 600}}>Selected Public Collections</h3>
                   <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
                     {artist.selected_public_collections}
                   </p>
@@ -516,7 +515,7 @@ export default function ArtistDetailPage() {
 
               {artist.contact_info && (
                 <div style={{ marginTop: "28px" }}>
-                  <h3>Contact Information</h3>
+                  <h3 style={{fontWeight: "600"}}>Contact Information</h3>
                   <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
                     {artist.contact_info}
                   </p>
@@ -917,8 +916,8 @@ export default function ArtistDetailPage() {
         </section>
       )}
 
-      <section>
-        <h2 style={{ marginBottom: "32px" }}>Works</h2>
+      <section style={{ borderTop: "1px solid #ddd" }}>
+        <h2 style={{ marginTop: "16px",marginBottom: "32px", fontSize: "24px", fontWeight: 600 }}>Works</h2>
 
         {artworks.length === 0 ? (
           <p>No artworks found for this artist.</p>

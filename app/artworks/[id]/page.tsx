@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
 
 type Artist = {
   id: number;
@@ -49,11 +50,13 @@ type Artwork = {
 };
 
 const categoryOptions = [
-  "Calligraphy",
-  "Origami",
-  "Metalwork",
+  "All",
   "Ceramics",
-  "Lacquerware",
+  "Metalwork",
+  "Lacquer",
+  "Glass",
+  "Wall",
+  "Other",
 ];
 
 const inputStyle = {
@@ -273,50 +276,60 @@ export default function ArtworkDetailPage() {
       ? `￥${artwork.cost.toLocaleString()}`
       : "";
 
-  function generateCopyInfo() {
-    const selectedArtist = artistOptions.find(
-      (option) => option.id === Number(form.artist_id)
-    );
-
-    const selectedArtistName =
-      selectedArtist?.name_en ||
-      selectedArtist?.name ||
-      selectedArtist?.name_jp ||
-      artwork.artist_name ||
-      "Unknown Artist";
-
-    const title = form.title_en.trim() || form.title_jp.trim();
-
-    const generatedMarketPrice =
-      form.market_price.trim() !== ""
-        ? `$${Number(form.market_price).toLocaleString()}`
-        : "";
-
-    const generatedCost =
-      form.cost.trim() !== ""
-        ? `￥${Number(form.cost).toLocaleString()}`
-        : "";
-
-    const generatedText = `**${selectedArtistName}**
-
-*${title}${form.year.trim() ? `, ${form.year.trim()}` : ""}*
-
-${form.material.trim()}
-
-${form.dimensions.trim()}
-
-${generatedMarketPrice}
 
 
-Gallery Price: ${generatedMarketPrice}
-
-Cost: ${generatedCost}`;
-
-    setForm((current) => ({
-      ...current,
-      copy_info: generatedText,
-    }));
-  }
+      function generateCopyInfo() {
+        const selectedArtist = artistOptions.find(
+          (option) => option.id === Number(form.artist_id)
+        );
+      
+        const selectedArtistName =
+          selectedArtist?.name_en ||
+          selectedArtist?.name ||
+          selectedArtist?.name_jp ||
+          artwork.artist_name ||
+          "Unknown Artist";
+      
+        const title =
+          form.title_en.trim() ||
+          form.title_jp.trim() ||
+          "Untitled";
+      
+        const titleWithYear = form.year.trim()
+          ? `${title}, ${form.year.trim()}`
+          : title;
+      
+        const generatedMarketPrice =
+          form.market_price.trim() !== ""
+            ? `$${Number(form.market_price).toLocaleString()}`
+            : "";
+      
+        const generatedCost =
+          form.cost.trim() !== ""
+            ? `￥${Number(form.cost).toLocaleString()}`
+            : "";
+      
+        const generatedText = [
+          `**${selectedArtistName}**`,
+          `*${titleWithYear}*`,
+          form.material.trim(),
+          form.dimensions.trim(),
+          generatedMarketPrice,
+          generatedMarketPrice
+            ? `Gallery Price: ${generatedMarketPrice}`
+            : "",
+          generatedCost
+            ? `Cost: ${generatedCost}`
+            : "",
+        ]
+          .filter((line) => line !== "")
+          .join("\n");
+      
+        setForm((current) => ({
+          ...current,
+          copy_info: generatedText,
+        }));
+      }
 
   function applyMarkdownFormat(marker: "*" | "**") {
     const textarea = copyInfoRef.current;
@@ -553,13 +566,16 @@ Cost: ${generatedCost}`;
   }
 
   return (
-    <main
-      style={{
-        maxWidth: "1200px",
-        margin: "0 auto",
-        padding: "48px 72px",
-      }}
-    >
+    // <main
+    //   style={{
+    //     maxWidth: "1200px",
+    //     margin: "0 auto",
+    //     padding: "48px 72px",
+    //   }}
+    // >
+
+    <main className="artwork-detail-main">
+
       <Link
         href="/artworks"
         style={{
@@ -598,7 +614,7 @@ Cost: ${generatedCost}`;
             </button>
           </div>
 
-          <section
+          {/* <section
             style={{
               display: "grid",
               gridTemplateColumns: "1.2fr 1fr",
@@ -606,7 +622,10 @@ Cost: ${generatedCost}`;
               marginTop: "20px",
               marginBottom: "48px",
             }}
-          >
+          > */}
+
+            <section className="artwork-detail-grid">
+
             <div>
               {artwork.artwork_photo_url && (
                 <div
@@ -632,7 +651,7 @@ Cost: ${generatedCost}`;
             </div>
 
             <div>
-              <h1>
+              <h1 style={{fontSize: "18px", fontWeight: 600 }}>
                 <ReactMarkdown
                   components={{
                     p: ({ children }) => <>{children}</>,
@@ -645,7 +664,7 @@ Cost: ${generatedCost}`;
               </h1>
 
               {artwork.title_en && artwork.title_jp && (
-                <p>{artwork.title_jp}</p>
+                <p style={{marginBottom: "16px", fontSize: "18px", fontWeight: 600 }}>{artwork.title_jp}</p>
               )}
 
               <p>
@@ -1141,7 +1160,7 @@ Cost: ${generatedCost}`;
                   ...inputStyle,
                   minHeight: "260px",
                   resize: "vertical",
-                  lineHeight: 1.6,
+                  lineHeight: 1,
                 }}
               />
 
@@ -1151,7 +1170,7 @@ Cost: ${generatedCost}`;
                   padding: "16px",
                   border: "1px solid #ddd",
                   background: "#fafafa",
-                  lineHeight: 1.7,
+                  lineHeight: 1,
                 }}
               >
                 {form.copy_info.trim() ? (
@@ -1341,74 +1360,68 @@ Cost: ${generatedCost}`;
 
       {!isEditing && (
         <>
-          <section
-            style={{
-              border: "1px solid #ddd",
-              padding: "24px",
-              marginBottom: "48px",
-              background: "#fafafa",
-            }}
-          >
-            {artwork.copy_info ? (
-              <div
-                style={{
-                  lineHeight: 1.7,
-                  marginBottom: "20px",
-                }}
-              >
-                <ReactMarkdown
-                  components={{
-                    p: ({ children }) => (
-                      <p
-                        style={{
-                          margin: "0 0 14px 0",
-                        }}
-                      >
-                        {children}
-                      </p>
-                    ),
-                  }}
-                >
-                  {artwork.copy_info}
-                </ReactMarkdown>
-              </div>
-            ) : (
-              <p
-                style={{
-                  margin: "0 0 20px 0",
-                  color: "#777",
-                }}
-              >
-                No copy information saved.
-              </p>
-            )}
+          
 
-            <button
-              type="button"
-              onClick={copyArtworkInfo}
-              disabled={!artwork.copy_info}
-              style={{
-                padding: "10px 14px",
-                border: "1px solid #9c1515",
-                background: "#9c1515",
-                color: "white",
-                cursor: artwork.copy_info
-                  ? "pointer"
-                  : "default",
-                opacity: artwork.copy_info ? 1 : 0.5,
-              }}
-            >
-              {copied ? "Copied" : "Copy Information"}
-            </button>
-          </section>
+<section
+  style={{
+    border: "1px solid #ddd",
+    padding: "24px",
+    marginBottom: "48px",
+    background: "#fafafa",
+  }}
+>
+  {artwork.copy_info ? (
+    <div
+      style={{
+        whiteSpace: "pre-wrap",
+        lineHeight: 1.7,
+      }}
+    >
+      <ReactMarkdown
+        remarkPlugins={[remarkBreaks]}
+        components={{
+          p: ({ children }) => <>{children}</>,
+        }}
+      >
+        {artwork.copy_info}
+      </ReactMarkdown>
+    </div>
+  ) : (
+    <p
+      style={{
+        margin: 0,
+        color: "#777",
+      }}
+    >
+      No copy information saved.
+    </p>
+  )}
+
+  <button
+    type="button"
+    onClick={copyArtworkInfo}
+    disabled={!artwork.copy_info}
+    style={{
+      marginTop: "20px",
+      padding: "10px 14px",
+      border: "1px solid #9c1515",
+      background: "#9c1515",
+      color: "white",
+      cursor: artwork.copy_info ? "pointer" : "default",
+      opacity: artwork.copy_info ? 1 : 0.5,
+    }}
+  >
+    {copied ? "Copied" : "Copy Information"}
+  </button>
+</section>
 
           <section
             style={{
               borderTop: "1px solid #ddd",
-              paddingTop: "40px",
+              paddingTop: "40px"
             }}
           >
-            <h2>Artist</h2>
+            <h2 style={{ marginBottom: "12px", fontSize: "18px", fontWeight: 600 }}>Artist</h2>
 
             <Link
               href={artistHref}

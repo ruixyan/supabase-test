@@ -40,11 +40,12 @@ type Props = {
 
 const categoryOptions = [
   "All",
-  "Calligraphy",
-  "Origami",
-  "Metalwork",
   "Ceramics",
-  "Lacquerware",
+  "Metalwork",
+  "Lacquer",
+  "Glass",
+  "Wall",
+  "Other",
 ];
 
 const inputStyle = {
@@ -91,16 +92,19 @@ export default function ArtworkFilterPanel({
   addNewHref,
 }: Props) {
   return (
-    <aside
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "12px",
-        position: "sticky",
-        top: "48px",
-      }}
-    >
-      <ViewModePanel current={currentMode} />
+    // <aside
+    //   style={{
+    //     display: "flex",
+    //     flexDirection: "column",
+    //     gap: "12px",
+    //     position: "sticky",
+    //     top: "48px",
+    //   }}
+    // >
+
+    // for mobile
+    <aside className="sidebar"> 
+      {/* <ViewModePanel current={currentMode} /> */}
 
       {addNewLabel && addNewHref && (
   <Link

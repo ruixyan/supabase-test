@@ -26,11 +26,13 @@ type ClientOption = {
 };
 
 const categoryOptions = [
-  "Calligraphy",
-  "Origami",
-  "Metalwork",
+  "All",
   "Ceramics",
-  "Lacquerware",
+  "Metalwork",
+  "Lacquer",
+  "Glass",
+  "Wall",
+  "Other",
 ];
 
 const inputStyle = {

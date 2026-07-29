@@ -173,17 +173,21 @@ export default function ArtworksPage() {
   ]);
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 260px",
-        gap: "48px",
-        padding: "48px 72px",
-        maxWidth: "1600px",
-        margin: "0 auto",
-        alignItems: "start",
-      }}
-    >
+    // <div
+    //   style={{
+    //     display: "grid",
+    //     gridTemplateColumns: "1fr 260px",
+    //     gap: "48px",
+    //     padding: "48px 72px",
+    //     maxWidth: "1600px",
+    //     margin: "0 auto",
+    //     alignItems: "start",
+    //   }}
+    // >
+    // for mobile 
+
+    <div className="artworks-layout">
+      
       <main>
         {message && (
           <p style={{ marginBottom: "20px", color: "#9c1515" }}>{message}</p>
@@ -192,14 +196,18 @@ export default function ArtworksPage() {
         {filtered.length === 0 ? (
           <p style={{ fontSize: "15px" }}>No artworks found.</p>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, minmax(220px, 1fr))",
-              gap: "56px 48px",
-              alignItems: "start",
-            }}
-          >
+          // <div
+          //   style={{
+          //     display: "grid",
+          //     gridTemplateColumns: "repeat(3, minmax(220px, 1fr))",
+          //     gap: "56px 48px",
+          //     alignItems: "start",
+          //   }}
+          // >
+
+          // for mobile 
+          <div className="artworks-grid">
+
             {filtered.map((artwork) => (
               <Link
                 key={artwork.id}
