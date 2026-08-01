@@ -51,7 +51,7 @@ type Artwork = {
 
 const categoryOptions = [
   "All",
-  "Ceramics",
+  "Ceramic",
   "Metalwork",
   "Lacquer",
   "Glass",
@@ -279,6 +279,8 @@ export default function ArtworkDetailPage() {
 
 
       function generateCopyInfo() {
+        if (!artwork) return;
+      
         const selectedArtist = artistOptions.find(
           (option) => option.id === Number(form.artist_id)
         );
@@ -404,10 +406,12 @@ export default function ArtworkDetailPage() {
   }
 
   async function copyArtworkInfo() {
+    if (!artwork) return;
+  
     const sourceText =
       artwork.copy_info?.trim() ||
       form.copy_info.trim();
-
+  
     if (!sourceText) {
       setMessage("There is no copy information.");
       return;
@@ -436,6 +440,8 @@ export default function ArtworkDetailPage() {
   }
 
   function cancelEditing() {
+    if (!artwork) return;
+  
     setForm({
       artist_id: artwork.artist_id
         ? String(artwork.artist_id)

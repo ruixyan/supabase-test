@@ -40,7 +40,7 @@ const categoryOptions = [
   "Calligraphy",
   "Origami",
   "Metalwork",
-  "Ceramics",
+  "Ceramic",
   "Lacquerware",
 ];
 

@@ -27,7 +27,7 @@ type ClientOption = {
 
 const categoryOptions = [
   "All",
-  "Ceramics",
+  "Ceramic",
   "Metalwork",
   "Lacquer",
   "Glass",
