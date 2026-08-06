@@ -12,6 +12,7 @@ import {
 } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
+import ImageUploadField from "@/app/components/ImageUploadField";
 
 type Artist = {
   id: number;
@@ -83,6 +84,8 @@ export default function ArtworkDetailPage() {
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
 
   const [form, setForm] = useState({
     artist_id: "",
@@ -915,21 +918,18 @@ export default function ArtworkDetailPage() {
               />
             </FormField>
 
-            <FormField label="Artwork Photo URL">
-              <input
-                type="url"
-                value={form.artwork_photo_url}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    artwork_photo_url:
-                      event.target.value,
-                  })
-                }
-                placeholder="https://..."
-                style={inputStyle}
-              />
-            </FormField>
+     <ImageUploadField
+  label="Artwork Image"
+  bucket="artworks"
+  folder="main-images"
+  value={form.artwork_photo_url}
+  onChange={(url) =>
+    setForm({
+      ...form,
+      artwork_photo_url: url,
+    })
+  }
+/>
 
             <FormField label="Year">
               <input

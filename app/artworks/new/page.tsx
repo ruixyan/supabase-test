@@ -11,6 +11,7 @@ import {
   type RefObject,
 } from "react";
 import ReactMarkdown from "react-markdown";
+import ImageUploadField from "@/app/components/ImageUploadField";
 
 type ArtistOption = {
   id: number;
@@ -57,6 +58,7 @@ export default function NewArtworkPage() {
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState("");
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
 
   const [form, setForm] = useState({
     artist_id: "",
@@ -262,7 +264,29 @@ Cost: ${cost}`;
     setTimeout(() => setCopied(false), 1500);
   }
 
+  let artworkPhotoUrl = form.artwork_photo_url.trim() || null;
+  
   async function addArtwork(event: React.FormEvent<HTMLFormElement>) {
+    if (uploadedImage) {
+  const fileExt = uploadedImage.name.split(".").pop();
+  const fileName = `${Date.now()}.${fileExt}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("artworks")
+    .upload(fileName, uploadedImage);
+
+  if (uploadError) {
+    setMessage(uploadError.message);
+    setSubmitting(false);
+    return;
+  }
+
+  const { data } = supabase.storage
+    .from("artworks")
+    .getPublicUrl(fileName);
+
+  artworkPhotoUrl = data.publicUrl;
+}
     event.preventDefault();
 
     if (!form.artist_id) {
@@ -305,7 +329,6 @@ Cost: ${cost}`;
           title_en: form.title_en.trim() || null,
           title_jp: form.title_jp.trim() || null,
           artwork_photo_url: form.artwork_photo_url.trim() || null,
-
           year: form.year.trim() || null,
           material: form.material.trim() || null,
           dimensions: form.dimensions.trim() || null,
@@ -454,20 +477,18 @@ Cost: ${cost}`;
   />
 </FormField>
 
-          <FormField label="Artwork Photo URL">
-            <input
-              type="url"
-              value={form.artwork_photo_url}
-              onChange={(event) =>
-                setForm({
-                  ...form,
-                  artwork_photo_url: event.target.value,
-                })
-              }
-              placeholder="https://..."
-              style={inputStyle}
-            />
-          </FormField>
+  <ImageUploadField
+  label="Artwork Image"
+  bucket="artworks"
+  folder="main-images"
+  value={form.artwork_photo_url}
+  onChange={(url) =>
+    setForm((current) => ({
+      ...current,
+      artwork_photo_url: url,
+    }))
+  }
+/>
 
           <FormField label="Year">
             <input
