@@ -148,16 +148,11 @@ export default function NewArtworkPage() {
     const generatedText = `**${artistDisplayName}**
 
 *${title}${form.year.trim() ? `, ${form.year.trim()}` : ""}*
-
 ${form.material.trim()}
-
 ${form.dimensions.trim()}
-
 ${marketPrice}
 
-
 Gallery Price: ${marketPrice}
-
 Cost: ${cost}`;
 
     setForm((current) => ({

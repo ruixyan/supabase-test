@@ -11,6 +11,14 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "static-assets.artlogic.net",
       },
+      {
+        protocol: "https",
+        hostname: "www.dropbox.com",
+      },
+      {
+        protocol: "https",
+        hostname: "dl.dropboxusercontent.com",
+      },
     ],
   },
 };
