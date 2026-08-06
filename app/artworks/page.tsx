@@ -30,6 +30,7 @@ type Artwork = {
   material: string | null;
   dimensions: string | null;
   category: string | null;
+  is_unique: boolean;
   is_sold: boolean;
   created_at: string;
   customers: Customer;
@@ -37,11 +38,12 @@ type Artwork = {
 
 const categoryOptions = [
   "All",
-  "Calligraphy",
-  "Origami",
+  "Ceramics",
   "Metalwork",
-  "Ceramic",
-  "Lacquerware",
+  "Lacquer",
+  "Glass",
+  "Wall",
+  "Other",
 ];
 
 export default function ArtworksPage() {
@@ -73,6 +75,7 @@ export default function ArtworksPage() {
         material,
         dimensions,
         category,
+        is_unique,
         is_sold,
         created_at,
         customers (
@@ -307,17 +310,39 @@ export default function ArtworksPage() {
                   </p>
                 )}
 
-                <span
-                  style={{
-                    display: "inline-block",
-                    padding: "4px 10px",
-                    border: "1px solid #bdbdbd",
-                    fontSize: "13px",
-                    color: artwork.is_sold ? "#9c1515" : "#444",
-                  }}
-                >
-                  {artwork.is_sold ? "Sold" : "Available"}
-                </span>
+                <div
+  style={{
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "6px",
+  }}
+>
+  {artwork.is_unique && (
+    <span
+      style={{
+        display: "inline-block",
+        padding: "4px 10px",
+        border: "1px solid #bdbdbd",
+        fontSize: "13px",
+        color: "#444",
+      }}
+    >
+      Unique
+    </span>
+  )}
+
+  <span
+    style={{
+      display: "inline-block",
+      padding: "4px 10px",
+      border: "1px solid #bdbdbd",
+      fontSize: "13px",
+      color: artwork.is_sold ? "#9c1515" : "#444",
+    }}
+  >
+    {artwork.is_sold ? "Sold" : "Available"}
+  </span>
+</div>
               </Link>
             ))}
           </div>

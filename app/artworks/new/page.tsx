@@ -149,7 +149,6 @@ export default function NewArtworkPage() {
     const title = form.title_en.trim() || form.title_jp.trim();
 
     const generatedText = `**${artistDisplayName}**
-
 *${title}*${form.year.trim() ? `, ${form.year.trim()}` : ""}
 ${form.material.trim()}
 ${form.dimensions.trim()}
