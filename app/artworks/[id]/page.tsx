@@ -43,6 +43,7 @@ type Artwork = {
   dimensions: string | null;
   category: string | null;
   is_sold: boolean;
+  is_unique: boolean;
   buyer_id: number | null;
   market_price: number | null;
   cost: number | null;
@@ -101,6 +102,7 @@ export default function ArtworkDetailPage() {
     extra_photo_link: "",
     fact_sheet_link: "",
     copy_info: "",
+    is_unique: true,
     is_sold: false,
     buyer_id: "",
   });
@@ -130,6 +132,7 @@ export default function ArtworkDetailPage() {
         material,
         dimensions,
         category,
+        is_unique,
         is_sold,
         buyer_id,
         market_price,
@@ -162,23 +165,24 @@ export default function ArtworkDetailPage() {
     setArtwork(data);
 
     setForm({
-      artist_id: data.artist_id ? String(data.artist_id) : "",
-      title_en: data.title_en || "",
-      title_jp: data.title_jp || "",
-      artwork_photo_url: data.artwork_photo_url || "",
-      year: data.year || "",
-      material: data.material || "",
-      dimensions: data.dimensions || "",
-      category: data.category || "",
-      market_price:
-        data.market_price !== null ? String(data.market_price) : "",
-      cost: data.cost !== null ? String(data.cost) : "",
-      extra_photo_link: data.extra_photo_link || "",
-      fact_sheet_link: data.fact_sheet_link || "",
-      copy_info: data.copy_info || "",
-      is_sold: data.is_sold,
-      buyer_id: data.buyer_id ? String(data.buyer_id) : "",
-    });
+  artist_id: data.artist_id ? String(data.artist_id) : "",
+  title_en: data.title_en || "",
+  title_jp: data.title_jp || "",
+  artwork_photo_url: data.artwork_photo_url || "",
+  year: data.year || "",
+  material: data.material || "",
+  dimensions: data.dimensions || "",
+  category: data.category || "",
+  market_price:
+    data.market_price !== null ? String(data.market_price) : "",
+  cost: data.cost !== null ? String(data.cost) : "",
+  extra_photo_link: data.extra_photo_link || "",
+  fact_sheet_link: data.fact_sheet_link || "",
+  copy_info: data.copy_info || "",
+  is_unique: data.is_unique,
+  is_sold: data.is_sold,
+  buyer_id: data.buyer_id ? String(data.buyer_id) : "",
+});
 
     setMessage("");
   }
@@ -442,40 +446,41 @@ export default function ArtworkDetailPage() {
     setTimeout(() => setCopied(false), 1500);
   }
 
-  function cancelEditing() {
-    if (!artwork) return;
-  
-    setForm({
-      artist_id: artwork.artist_id
-        ? String(artwork.artist_id)
-        : "",
-      title_en: artwork.title_en || "",
-      title_jp: artwork.title_jp || "",
-      artwork_photo_url: artwork.artwork_photo_url || "",
-      year: artwork.year || "",
-      material: artwork.material || "",
-      dimensions: artwork.dimensions || "",
-      category: artwork.category || "",
-      market_price:
-        artwork.market_price !== null
-          ? String(artwork.market_price)
-          : "",
-      cost:
-        artwork.cost !== null
-          ? String(artwork.cost)
-          : "",
-      extra_photo_link: artwork.extra_photo_link || "",
-      fact_sheet_link: artwork.fact_sheet_link || "",
-      copy_info: artwork.copy_info || "",
-      is_sold: artwork.is_sold,
-      buyer_id: artwork.buyer_id
-        ? String(artwork.buyer_id)
-        : "",
-    });
+function cancelEditing() {
+  if (!artwork) return;
 
-    setMessage("");
-    setIsEditing(false);
-  }
+  setForm({
+    artist_id: artwork.artist_id
+      ? String(artwork.artist_id)
+      : "",
+    title_en: artwork.title_en || "",
+    title_jp: artwork.title_jp || "",
+    artwork_photo_url: artwork.artwork_photo_url || "",
+    year: artwork.year || "",
+    material: artwork.material || "",
+    dimensions: artwork.dimensions || "",
+    category: artwork.category || "",
+    market_price:
+      artwork.market_price !== null
+        ? String(artwork.market_price)
+        : "",
+    cost:
+      artwork.cost !== null
+        ? String(artwork.cost)
+        : "",
+    extra_photo_link: artwork.extra_photo_link || "",
+    fact_sheet_link: artwork.fact_sheet_link || "",
+    copy_info: artwork.copy_info || "",
+    is_unique: artwork.is_unique,
+    is_sold: artwork.is_sold,
+    buyer_id: artwork.buyer_id
+      ? String(artwork.buyer_id)
+      : "",
+  });
+
+  setMessage("");
+  setIsEditing(false);
+}
 
   async function saveArtwork(
     event: React.FormEvent<HTMLFormElement>
@@ -516,50 +521,44 @@ export default function ArtworkDetailPage() {
     setMessage("");
 
     const { error } = await supabase
-      .from("artworks")
-      .update({
-        artist_id: selectedArtist.id,
-        artist_name: selectedArtistName,
-        artist_photo_url:
-          selectedArtist.artist_photo_url || null,
+  .from("artworks")
+  .update({
+    artist_id: selectedArtist.id,
+    artist_name: selectedArtistName,
+    artist_photo_url: selectedArtist.artist_photo_url || null,
 
-        title_en: form.title_en.trim() || null,
-        title_jp: form.title_jp.trim() || null,
-        artwork_photo_url:
-          form.artwork_photo_url.trim() || null,
+    title_en: form.title_en.trim() || null,
+    title_jp: form.title_jp.trim() || null,
+    artwork_photo_url: form.artwork_photo_url.trim() || null,
 
-        year: form.year.trim() || null,
-        material: form.material.trim() || null,
-        dimensions: form.dimensions.trim() || null,
-        category: form.category || null,
+    year: form.year.trim() || null,
+    material: form.material.trim() || null,
+    dimensions: form.dimensions.trim() || null,
+    category: form.category || null,
 
-        market_price:
-          form.market_price.trim() === ""
-            ? null
-            : Number(form.market_price),
+    market_price:
+      form.market_price.trim() === ""
+        ? null
+        : Number(form.market_price),
 
-        cost:
-          form.cost.trim() === ""
-            ? null
-            : Number(form.cost),
+    cost:
+      form.cost.trim() === ""
+        ? null
+        : Number(form.cost),
 
-        extra_photo_link:
-          form.extra_photo_link.trim() || null,
+    extra_photo_link: form.extra_photo_link.trim() || null,
+    fact_sheet_link: form.fact_sheet_link.trim() || null,
+    copy_info: form.copy_info.trim() || null,
 
-        fact_sheet_link:
-          form.fact_sheet_link.trim() || null,
+    is_unique: form.is_unique,
+    is_sold: form.is_sold,
 
-        copy_info:
-          form.copy_info.trim() || null,
-
-        is_sold: form.is_sold,
-
-        buyer_id:
-          form.is_sold && form.buyer_id
-            ? Number(form.buyer_id)
-            : null,
-      })
-      .eq("id", id);
+    buyer_id:
+      form.is_sold && form.buyer_id
+        ? Number(form.buyer_id)
+        : null,
+  })
+  .eq("id", id);
 
     if (error) {
       setMessage(error.message);
@@ -738,19 +737,37 @@ export default function ArtworkDetailPage() {
                 </p>
               )}
 
-              <span
-                style={{
-                  display: "inline-block",
-                  marginTop: "16px",
-                  padding: "6px 12px",
-                  border: "1px solid #bdbdbd",
-                  color: artwork.is_sold
-                    ? "#9c1515"
-                    : "#444",
-                }}
-              >
-                {artwork.is_sold ? "Sold" : "Available"}
-              </span>
+              <div
+  style={{
+    display: "flex",
+    gap: "8px",
+    marginTop: "16px",
+  }}
+>
+  <span
+    style={{
+      display: "inline-block",
+      padding: "6px 12px",
+      border: "1px solid #bdbdbd",
+      color: "#444",
+      fontSize: "14px",
+    }}
+  >
+    {artwork.is_unique ? "Unique" : "Multiple"}
+  </span>
+
+  <span
+    style={{
+      display: "inline-block",
+      padding: "6px 12px",
+      border: "1px solid #bdbdbd",
+      color: artwork.is_sold ? "#9c1515" : "#444",
+      fontSize: "14px",
+    }}
+  >
+    {artwork.is_sold ? "Sold" : "Available"}
+  </span>
+</div>
 
               <div style={{ marginTop: "24px" }}>
                 {artwork.extra_photo_link && (
@@ -1207,7 +1224,56 @@ export default function ArtworkDetailPage() {
                 )}
               </div>
             </section>
+<div>
+  <label
+    style={{
+      display: "block",
+      marginBottom: "8px",
+      fontSize: "13px",
+      fontWeight: 600,
+    }}
+  >
+    Edition Type
+  </label>
 
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: "8px",
+    }}
+  >
+    {[
+      { label: "Unique", value: true },
+      { label: "Multiple", value: false },
+    ].map((option) => {
+      const isActive = form.is_unique === option.value;
+
+      return (
+        <button
+          key={option.label}
+          type="button"
+          onClick={() =>
+            setForm({
+              ...form,
+              is_unique: option.value,
+            })
+          }
+          style={{
+            padding: "10px 12px",
+            border: "1px solid #bdbdbd",
+            background: isActive ? "#9c1515" : "white",
+            color: isActive ? "white" : "black",
+            cursor: "pointer",
+            fontSize: "13px",
+          }}
+        >
+          {option.label}
+        </button>
+      );
+    })}
+  </div>
+</div>
             <div>
               <label
                 style={{
