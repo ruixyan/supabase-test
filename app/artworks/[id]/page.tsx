@@ -286,7 +286,8 @@ export default function ArtworkDetailPage() {
 
 
       function generateCopyInfo() {
-        if (!artwork) return;
+        const currentArtwork = artwork;
+        if (!currentArtwork) return;
       
         const selectedArtist = artistOptions.find(
           (option) => option.id === Number(form.artist_id)
