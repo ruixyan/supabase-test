@@ -144,21 +144,29 @@ export default function ArtworksPage() {
       result = result.filter((artwork) => artwork.is_sold === true);
     }
 
-    result = result.filter((artwork) => {
-  if (artwork.market_price === null) return false;
+   if (minPrice !== "" || maxPrice !== "") {
+  result = result.filter((artwork) => {
+    if (artwork.market_price === null) {
+      return false;
+    }
 
-  const price = artwork.market_price;
+    if (
+      minPrice !== "" &&
+      artwork.market_price < Number(minPrice)
+    ) {
+      return false;
+    }
 
-  if (minPrice !== "" && price < Number(minPrice)) {
-    return false;
-  }
+    if (
+      maxPrice !== "" &&
+      artwork.market_price > Number(maxPrice)
+    ) {
+      return false;
+    }
 
-  if (maxPrice !== "" && price > Number(maxPrice)) {
-    return false;
-  }
-
-  return true;
-});
+    return true;
+  });
+}
 
     setFiltered(result);
   }, [
