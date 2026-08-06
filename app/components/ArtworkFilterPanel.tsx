@@ -40,7 +40,7 @@ type Props = {
 
 const categoryOptions = [
   "All",
-  "Ceramic",
+  "Ceramics",
   "Metalwork",
   "Lacquer",
   "Glass",
