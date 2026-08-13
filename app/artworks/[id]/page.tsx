@@ -1188,42 +1188,56 @@ function cancelEditing() {
                 }}
               />
 
-              <div
-                style={{
-                  marginTop: "16px",
-                  padding: "16px",
-                  border: "1px solid #ddd",
-                  background: "#fafafa",
-                  lineHeight: 1,
-                }}
-              >
-                {form.copy_info.trim() ? (
-                  <ReactMarkdown
-                    components={{
-                      p: ({ children }) => (
-                        <p
-                          style={{
-                            margin: "0 0 12px 0",
-                          }}
-                        >
-                          {children}
-                        </p>
-                      ),
-                    }}
-                  >
-                    {form.copy_info}
-                  </ReactMarkdown>
-                ) : (
-                  <p
-                    style={{
-                      margin: 0,
-                      color: "#777",
-                    }}
-                  >
-                    Copy information preview
-                  </p>
-                )}
-              </div>
+<div
+  style={{
+    marginTop: "16px",
+    padding: "16px",
+    border: "1px solid #ddd",
+    background: "#fafafa",
+    lineHeight: 1.6,
+  }}
+>
+  {form.copy_info.trim() ? (
+    <div>
+      {form.copy_info.split("\n").map((line, index) => {
+        if (line.trim() === "") {
+          return <div key={index} style={{ height: "1.6em" }} />;
+        }
+
+        return (
+          <div key={index}>
+            <ReactMarkdown
+              components={{
+                p: ({ children }) => <>{children}</>,
+                strong: ({ children }) => (
+                  <strong style={{ fontWeight: 700 }}>
+                    {children}
+                  </strong>
+                ),
+                em: ({ children }) => (
+                  <em style={{ fontStyle: "italic" }}>
+                    {children}
+                  </em>
+                ),
+              }}
+            >
+              {line}
+            </ReactMarkdown>
+          </div>
+        );
+      })}
+    </div>
+  ) : (
+    <p
+      style={{
+        margin: 0,
+        color: "#777",
+      }}
+    >
+      Copy information preview
+    </p>
+  )}
+</div>
             </section>
 <div>
   <label
@@ -1446,18 +1460,43 @@ function cancelEditing() {
   {artwork.copy_info ? (
     <div
       style={{
-        whiteSpace: "pre-wrap",
-        lineHeight: 1.7,
+        lineHeight: 1.6,
       }}
     >
-      <ReactMarkdown
-        remarkPlugins={[remarkBreaks]}
-        components={{
-          p: ({ children }) => <>{children}</>,
-        }}
-      >
-        {artwork.copy_info}
-      </ReactMarkdown>
+      {artwork.copy_info.split("\n").map((line, index) => {
+        if (line.trim() === "") {
+          return (
+            <div
+              key={index}
+              style={{
+                height: "1.6em",
+              }}
+            />
+          );
+        }
+
+        return (
+          <div key={index}>
+            <ReactMarkdown
+              components={{
+                p: ({ children }) => <>{children}</>,
+                strong: ({ children }) => (
+                  <strong style={{ fontWeight: 700 }}>
+                    {children}
+                  </strong>
+                ),
+                em: ({ children }) => (
+                  <em style={{ fontStyle: "italic" }}>
+                    {children}
+                  </em>
+                ),
+              }}
+            >
+              {line}
+            </ReactMarkdown>
+          </div>
+        );
+      })}
     </div>
   ) : (
     <p
