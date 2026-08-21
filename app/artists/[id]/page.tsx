@@ -992,15 +992,16 @@ export default function ArtistDetailPage() {
         {artworks.length === 0 ? (
           <p>No artworks found for this artist.</p>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(4, minmax(220px, 1fr))",
-              gap: "56px 48px",
-              alignItems: "start",
-            }}
-          >
+          // <div
+          //   style={{
+          //     display: "grid",
+          //     gridTemplateColumns:
+          //       "repeat(4, minmax(220px, 1fr))",
+          //     gap: "56px 48px",
+          //     alignItems: "start",
+          //   }}
+          // >
+          <div className="artist-works-grid">
             {artworks.map((artwork) => (
               <Link
                 key={artwork.id}

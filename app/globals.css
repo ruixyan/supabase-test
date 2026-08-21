@@ -82,6 +82,19 @@
   }
 }
 
+.artist-works-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  gap: 56px 48px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .artist-works-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .artworks-layout, .artists-layout {
   display: grid;
   grid-template-columns: 1fr 260px;
