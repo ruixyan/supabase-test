@@ -289,7 +289,7 @@ export default function ArtworkDetailPage() {
           selectedArtist?.name_en ||
           selectedArtist?.name ||
           selectedArtist?.name_jp ||
-          artwork.artist_name ||
+          artwork?.artist_name ||
           "Unknown Artist";
       
         const title =
