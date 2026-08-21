@@ -280,6 +280,57 @@ export default function ClientDetailPage() {
     setMessage("Client updated.");
   }
 
+  async function deleteClient() {
+  if (!client) return;
+
+  const confirmed = window.confirm(
+    `Are you sure you want to delete "${client.name}"? This cannot be undone.`
+  );
+
+  if (!confirmed) return;
+
+  setSaving(true);
+  setMessage("");
+
+  const { error: artworkError } = await supabase
+    .from("artworks")
+    .update({
+      buyer_id: null,
+      is_sold: false,
+    })
+    .eq("buyer_id", client.id);
+
+  if (artworkError) {
+    setMessage(
+      `Could not release this client's artworks: ${artworkError.message}`
+    );
+    setSaving(false);
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("customers")
+    .delete()
+    .eq("id", client.id)
+    .select("id");
+
+  if (error) {
+    setMessage(`Delete failed: ${error.message}`);
+    setSaving(false);
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    setMessage(
+      "Delete request completed, but no client was deleted. Check the customers DELETE policy in Supabase."
+    );
+    setSaving(false);
+    return;
+  }
+
+  window.location.href = "/clients";
+}
+
   const filteredArtworkOptions = availableArtworks.filter((artwork) => {
     const search = artworkSearch.trim().toLowerCase();
 
@@ -646,45 +697,72 @@ export default function ClientDetailPage() {
               </div>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                gap: "10px",
-                marginTop: "6px",
-              }}
-            >
-              <button
-                type="submit"
-                disabled={saving}
-                style={{
-                  padding: "11px 16px",
-                  border: "1px solid #9c1515",
-                  background: "#9c1515",
-                  color: "white",
-                  cursor: saving ? "default" : "pointer",
-                  opacity: saving ? 0.6 : 1,
-                  fontSize: "14px",
-                }}
-              >
-                {saving ? "Saving..." : "Save Changes"}
-              </button>
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "16px",
+    marginTop: "6px",
+  }}
+>
+  <div
+    style={{
+      display: "flex",
+      gap: "10px",
+    }}
+  >
+    <button
+      type="submit"
+      disabled={saving}
+      style={{
+        padding: "11px 16px",
+        border: "1px solid #9c1515",
+        background: "#9c1515",
+        color: "white",
+        cursor: saving ? "default" : "pointer",
+        opacity: saving ? 0.6 : 1,
+        fontSize: "14px",
+      }}
+    >
+      {saving ? "Saving..." : "Save Changes"}
+    </button>
 
-              <button
-                type="button"
-                disabled={saving}
-                onClick={cancelEditing}
-                style={{
-                  padding: "11px 16px",
-                  border: "1px solid #bdbdbd",
-                  background: "white",
-                  color: "black",
-                  cursor: saving ? "default" : "pointer",
-                  fontSize: "14px",
-                }}
-              >
-                Cancel
-              </button>
-            </div>
+    <button
+      type="button"
+      disabled={saving}
+      onClick={cancelEditing}
+      style={{
+        padding: "11px 16px",
+        border: "1px solid #bdbdbd",
+        background: "white",
+        color: "black",
+        cursor: saving ? "default" : "pointer",
+        opacity: saving ? 0.6 : 1,
+        fontSize: "14px",
+      }}
+    >
+      Cancel
+    </button>
+  </div>
+
+  <button
+    type="button"
+    disabled={saving}
+    onClick={deleteClient}
+    style={{
+      padding: "11px 16px",
+      border: "1px solid #9c1515",
+      background: "white",
+      color: "#9c1515",
+      cursor: saving ? "default" : "pointer",
+      opacity: saving ? 0.6 : 1,
+      fontSize: "14px",
+    }}
+  >
+    Delete Client
+  </button>
+</div>
 
             {message && (
               <p
