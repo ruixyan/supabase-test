@@ -379,7 +379,7 @@ Cost: ${cost}`;
         width: "100%",
         maxWidth: "760px",
         margin: "0 auto",
-        padding: "48px 72px",
+        padding: "24px 36px",
       }}
     >
       <Link
