@@ -231,8 +231,8 @@ Cost: ${cost}`;
 
   function stripMarkdown(text: string) {
     return text
-      .replace(/\*\*(.+?)\*\*/gs, "$1")
-      .replace(/\*(.+?)\*/gs, "$1");
+      .replace(/\*\*(.+?)\*\*/g, "$1")
+      .replace(/\*(.+?)\*/g, "$1");
   }
 
   async function copyInformation() {
