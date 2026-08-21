@@ -483,6 +483,53 @@ function cancelEditing() {
   setIsEditing(false);
 }
 
+async function deleteArtwork() {
+  if (!artwork) return;
+
+  const confirmed = window.confirm(
+    `Are you sure you want to delete "${
+      artwork.title_en || artwork.title_jp || "this artwork"
+    }"? This cannot be undone.`
+  );
+
+  if (!confirmed) return;
+
+  setSaving(true);
+  setMessage("");
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  console.log("CURRENT USER:", user);
+
+  const { data, error } = await supabase
+    .from("artworks")
+    .delete()
+    .eq("id", artwork.id)
+    .select("id");
+
+  console.log("DELETE artwork id:", artwork.id);
+  console.log("DELETE data:", data);
+  console.log("DELETE error:", error);
+
+  if (error) {
+    setMessage(`Delete failed: ${error.message}`);
+    setSaving(false);
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    setMessage(
+      "Delete request completed, but no artwork was deleted."
+    );
+    setSaving(false);
+    return;
+  }
+
+  window.location.href = "/artworks";
+}
+
   async function saveArtwork(
     event: React.FormEvent<HTMLFormElement>
   ) {
@@ -621,7 +668,9 @@ function cancelEditing() {
             >
               Edit Artwork
             </button>
+            
           </div>
+          
 
           {/* <section
             style={{
@@ -1170,68 +1219,53 @@ function cancelEditing() {
                 </button>
               </div>
 
-              <textarea
-                ref={copyInfoRef}
-                value={form.copy_info}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    copy_info: event.target.value,
-                  })
-                }
-                placeholder="Enter copy information..."
-                style={{
-                  ...inputStyle,
-                  minHeight: "260px",
-                  resize: "vertical",
-                  lineHeight: 1,
-                }}
-              />
+<textarea
+  ref={copyInfoRef}
+  value={form.copy_info}
+  onChange={(event) =>
+    setForm({
+      ...form,
+      copy_info: event.target.value,
+    })
+  }
+  placeholder="Enter copy information..."
+  style={{
+    ...inputStyle,
+    minHeight: "260px",
+    resize: "vertical",
+    fontFamily: "Arial, sans-serif",
+    lineHeight: 1.6,
+  }}
+/>
 
 <div
   style={{
     marginTop: "16px",
     padding: "16px",
     border: "1px solid #ddd",
-    background: "#fafafa",
-    lineHeight: 1.6,
+    background: "white",
+    lineHeight: 1.7,
+    whiteSpace: "pre-wrap",
   }}
 >
   {form.copy_info.trim() ? (
-    <div>
-      {form.copy_info.split("\n").map((line, index) => {
-        if (line.trim() === "") {
-          return <div key={index} style={{ height: "1.6em" }} />;
-        }
-
-        return (
-          <div key={index}>
-            <ReactMarkdown
-              components={{
-                p: ({ children }) => <>{children}</>,
-                strong: ({ children }) => (
-                  <strong style={{ fontWeight: 700 }}>
-                    {children}
-                  </strong>
-                ),
-                em: ({ children }) => (
-                  <em style={{ fontStyle: "italic" }}>
-                    {children}
-                  </em>
-                ),
-              }}
-            >
-              {line}
-            </ReactMarkdown>
-          </div>
-        );
-      })}
-    </div>
+    <ReactMarkdown
+      components={{
+        p: ({ children }) => (
+          <p style={{ margin: "0 0 12px 0" }}>
+            {children}
+          </p>
+        ),
+      }}
+    >
+      {form.copy_info}
+    </ReactMarkdown>
   ) : (
     <p
       style={{
         margin: 0,
         color: "#777",
+        fontSize: "14px",
       }}
     >
       Copy information preview
@@ -1389,47 +1423,69 @@ function cancelEditing() {
               </FormField>
             )}
 
-            <div
-              style={{
-                display: "flex",
-                gap: "10px",
-                marginTop: "6px",
-              }}
-            >
-              <button
-                type="submit"
-                disabled={saving}
-                style={{
-                  padding: "11px 16px",
-                  border: "1px solid #9c1515",
-                  background: "#9c1515",
-                  color: "white",
-                  cursor: saving
-                    ? "default"
-                    : "pointer",
-                  opacity: saving ? 0.6 : 1,
-                }}
-              >
-                {saving ? "Saving..." : "Save Changes"}
-              </button>
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "16px",
+    marginTop: "6px",
+  }}
+>
+  <div
+    style={{
+      display: "flex",
+      gap: "10px",
+    }}
+  >
+    <button
+      type="submit"
+      disabled={saving}
+      style={{
+        padding: "11px 16px",
+        border: "1px solid #9c1515",
+        background: "#9c1515",
+        color: "white",
+        cursor: saving ? "default" : "pointer",
+        opacity: saving ? 0.6 : 1,
+      }}
+    >
+      {saving ? "Saving..." : "Save Changes"}
+    </button>
 
-              <button
-                type="button"
-                disabled={saving}
-                onClick={cancelEditing}
-                style={{
-                  padding: "11px 16px",
-                  border: "1px solid #bdbdbd",
-                  background: "white",
-                  color: "black",
-                  cursor: saving
-                    ? "default"
-                    : "pointer",
-                }}
-              >
-                Cancel
-              </button>
-            </div>
+    <button
+      type="button"
+      disabled={saving}
+      onClick={cancelEditing}
+      style={{
+        padding: "11px 16px",
+        border: "1px solid #bdbdbd",
+        background: "white",
+        color: "black",
+        cursor: saving ? "default" : "pointer",
+        opacity: saving ? 0.6 : 1,
+      }}
+    >
+      Cancel
+    </button>
+  </div>
+
+  <button
+    type="button"
+    disabled={saving}
+    onClick={deleteArtwork}
+    style={{
+      padding: "11px 16px",
+      border: "1px solid #9c1515",
+      background: "white",
+      color: "#9c1515",
+      cursor: saving ? "default" : "pointer",
+      opacity: saving ? 0.6 : 1,
+    }}
+  >
+    Delete Artwork
+  </button>
+</div>
 
             {message && (
               <p

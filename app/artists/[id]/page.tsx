@@ -308,10 +308,6 @@ export default function ArtistDetailPage() {
       }
     }
 
-    /*
-      如果 artist 名字或照片被修改，
-      已经属于该 artist 的所有作品也一起同步。
-    */
     const { error: syncError } = await supabase
       .from("artworks")
       .update({
@@ -334,6 +330,53 @@ export default function ArtistDetailPage() {
     setSaving(false);
     setMessage("Artist updated.");
   }
+  async function deleteArtist() {
+  if (!artist) return;
+
+  const confirmed = window.confirm(
+    `Are you sure you want to delete "${
+      artist.name_en ||
+      artist.name ||
+      artist.name_jp ||
+      "this artist"
+    }"? This cannot be undone.`
+  );
+
+  if (!confirmed) return;
+
+  setSaving(true);
+  setMessage("");
+
+  const { error: artworkError } = await supabase
+    .from("artworks")
+    .update({
+      artist_id: null,
+      artist_name: null,
+      artist_photo_url: null,
+    })
+    .eq("artist_id", artist.id);
+
+  if (artworkError) {
+    setMessage(
+      `Could not unassign artworks: ${artworkError.message}`
+    );
+    setSaving(false);
+    return;
+  }
+
+  const { error } = await supabase
+    .from("artists")
+    .delete()
+    .eq("id", artist.id);
+
+  if (error) {
+    setMessage(error.message);
+    setSaving(false);
+    return;
+  }
+
+  window.location.href = "/artists";
+}
 
   const filteredSelectableArtworks = selectableArtworks.filter(
     (artwork) => {
@@ -862,44 +905,71 @@ export default function ArtistDetailPage() {
             </div>
 
             <div
-              style={{
-                display: "flex",
-                gap: "10px",
-                marginTop: "6px",
-              }}
-            >
-              <button
-                type="submit"
-                disabled={saving}
-                style={{
-                  padding: "11px 16px",
-                  border: "1px solid #9c1515",
-                  background: "#9c1515",
-                  color: "white",
-                  cursor: saving ? "default" : "pointer",
-                  opacity: saving ? 0.6 : 1,
-                  fontSize: "14px",
-                }}
-              >
-                {saving ? "Saving..." : "Save Changes"}
-              </button>
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "16px",
+    marginTop: "6px",
+  }}
+>
+  <div
+    style={{
+      display: "flex",
+      gap: "10px",
+    }}
+  >
+    <button
+      type="submit"
+      disabled={saving}
+      style={{
+        padding: "11px 16px",
+        border: "1px solid #9c1515",
+        background: "#9c1515",
+        color: "white",
+        cursor: saving ? "default" : "pointer",
+        opacity: saving ? 0.6 : 1,
+        fontSize: "14px",
+      }}
+    >
+      {saving ? "Saving..." : "Save Changes"}
+    </button>
 
-              <button
-                type="button"
-                disabled={saving}
-                onClick={cancelEditing}
-                style={{
-                  padding: "11px 16px",
-                  border: "1px solid #bdbdbd",
-                  background: "white",
-                  color: "black",
-                  cursor: saving ? "default" : "pointer",
-                  fontSize: "14px",
-                }}
-              >
-                Cancel
-              </button>
-            </div>
+    <button
+      type="button"
+      disabled={saving}
+      onClick={cancelEditing}
+      style={{
+        padding: "11px 16px",
+        border: "1px solid #bdbdbd",
+        background: "white",
+        color: "black",
+        cursor: saving ? "default" : "pointer",
+        opacity: saving ? 0.6 : 1,
+        fontSize: "14px",
+      }}
+    >
+      Cancel
+    </button>
+  </div>
+
+  <button
+    type="button"
+    disabled={saving}
+    onClick={deleteArtist}
+    style={{
+      padding: "11px 16px",
+      border: "1px solid #9c1515",
+      background: "white",
+      color: "#9c1515",
+      cursor: saving ? "default" : "pointer",
+      opacity: saving ? 0.6 : 1,
+      fontSize: "14px",
+    }}
+  >
+    Delete Artist
+  </button>
+</div>
 
             {message && (
               <p
