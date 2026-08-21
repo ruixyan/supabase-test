@@ -326,7 +326,7 @@ export default function ArtworkDetailPage() {
           form.dimensions.trim(),
           generatedMarketPrice,
           generatedMarketPrice
-            ? `Gallery Price: ${generatedMarketPrice}`
+            ? `Retail Price: ${generatedMarketPrice}`
             : "",
           generatedCost
             ? `Cost: ${generatedCost}`
@@ -776,7 +776,7 @@ async function deleteArtwork() {
                     fontSize: "16px",
                   }}
                 >
-                  <strong>Market Price:</strong>{" "}
+                  <strong>Retail Price:</strong>{" "}
                   {marketPriceText}
                 </p>
               )}
@@ -1073,7 +1073,7 @@ async function deleteArtwork() {
               </select>
             </FormField>
 
-            <FormField label="Market Price (USD)">
+            <FormField label="Retail Price (USD)">
               <input
                 type="number"
                 min="0"

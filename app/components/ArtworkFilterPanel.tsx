@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import ViewModePanel from "@/app/components/ViewModePanel";
-import SignOutButton from "@/app/components/SignOutButton";
-
 type Props = {
   currentMode: "artworks" | "artists" | "clients";
 
@@ -249,18 +247,6 @@ export default function ArtworkFilterPanel({
           />
         </div>
       )}
-
-      {/* Sign Out 放最底部 */}
-      <div
-  style={{
-    marginTop: "auto",
-    paddingTop: "24px",
-    display: "flex",
-    justifyContent: "flex-end",
-  }}
->
-  <SignOutButton />
-</div>
     </aside>
   );
 }

@@ -154,7 +154,7 @@ ${form.material.trim()}
 ${form.dimensions.trim()}
 ${marketPrice}
 
-Gallery Price: ${marketPrice}
+Retail Price: ${marketPrice}
 Cost: ${cost}`;
 
     setForm((current) => ({
@@ -559,7 +559,7 @@ Cost: ${cost}`;
             </select>
           </FormField>
 
-          <FormField label="Market Price (USD)">
+          <FormField label="Retail Price (USD)">
             <input
               type="number"
               min="0"
