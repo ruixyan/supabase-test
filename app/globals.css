@@ -214,3 +214,27 @@
     gap: 16px;
   }
 }
+
+@media print {
+  .navbar,
+  .price-list-controls {
+    display: none !important;
+  }
+
+  body {
+    margin: 0 !important;
+    background: white !important;
+  }
+
+  .price-list-preview {
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
+  @page {
+    size: Letter;
+    margin: 0.5in;
+  }
+}
