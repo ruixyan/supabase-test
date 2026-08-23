@@ -6,27 +6,6 @@ import Image from "next/image";
 import Link from "next/link";
 
 import ArtworkFilterPanel from "@/app/components/ArtworkFilterPanel";
-import ViewModePanel from "@/app/components/ViewModePanel";
-
-type Customer =
-  | {
-      id: number;
-      name: string | null;
-    }
-  | {
-      id: number;
-      name: string | null;
-    }[]
-  | null;
-
-type Artwork = {
-  id: number;
-  title_jp: string | null;
-  title_en: string | null;
-  category: string | null;
-  is_sold: boolean;
-  customers: Customer;
-};
 
 type Artist = {
   id: number;
@@ -36,265 +15,627 @@ type Artist = {
   artist_photo_url: string | null;
   nationality: string | null;
   birth_year: string | null;
-  artworks: Artwork[] | null;
 };
 
-const categoryOptions = [
-  "All",
-  "Calligraphy",
-  "Origami",
-  "Metalwork",
-  "Ceramic",
-  "Lacquerware",
-];
+const ITEMS_PER_PAGE = 12;
 
 export default function ArtistsPage() {
   const supabase = createClient();
 
   const [artists, setArtists] = useState<Artist[]>([]);
-  const [filtered, setFiltered] = useState<Artist[]>([]);
+
   const [activeCategory, setActiveCategory] = useState("All");
+
   const [artistSearchText, setArtistSearchText] = useState("");
   const [artworkSearchText, setArtworkSearchText] = useState("");
   const [buyerSearchText, setBuyerSearchText] = useState("");
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
-  async function loadArtists() {
-    const { data, error } = await supabase
-      .from("artists")
-      .select(`
-        id,
-        name,
-        name_en,
-        name_jp,
-        artist_photo_url,
-        nationality,
-        birth_year,
-        artworks (
-          id,
-          title_jp,
-          title_en,
-          category,
-          is_sold,
-          customers (
-            id,
-            name
-          )
-        )
-      `)
-      .order("name_en", { ascending: true });
+  const totalPages = Math.max(
+    1,
+    Math.ceil(totalCount / ITEMS_PER_PAGE)
+  );
 
-    if (error) {
-      setMessage(error.message);
-      return;
+  function cleanSearch(text: string) {
+    return text
+      .trim()
+      .replace(/[(),]/g, " ");
+  }
+
+  function intersectIds(
+    first: number[] | null,
+    second: number[]
+  ) {
+    if (first === null) {
+      return Array.from(new Set(second));
     }
 
-    if (data) {
-      setArtists(data);
-      setFiltered(data);
+    const secondSet = new Set(second);
+
+    return first.filter((id) =>
+      secondSet.has(id)
+    );
+  }
+
+  async function getArtistIdsFromArtworkSearch() {
+    const search = cleanSearch(
+      artworkSearchText
+    );
+
+    if (!search) {
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from("artworks")
+      .select("artist_id")
+      .or(
+        `title_en.ilike.%${search}%,title_jp.ilike.%${search}%`
+      )
+      .not("artist_id", "is", null);
+
+    if (error) {
+      throw error;
+    }
+
+    return Array.from(
+      new Set(
+        (data || [])
+          .map((item) => item.artist_id)
+          .filter(
+            (id): id is number =>
+              typeof id === "number"
+          )
+      )
+    );
+  }
+
+  async function getArtistIdsFromBuyerSearch() {
+    const search = buyerSearchText.trim();
+
+    if (!search) {
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from("artworks")
+      .select(`
+        artist_id,
+        customers!inner (
+          id,
+          name
+        )
+      `)
+      .ilike(
+        "customers.name",
+        `%${search}%`
+      )
+      .not("artist_id", "is", null);
+
+    if (error) {
+      throw error;
+    }
+
+    return Array.from(
+      new Set(
+        (data || [])
+          .map((item) => item.artist_id)
+          .filter(
+            (id): id is number =>
+              typeof id === "number"
+          )
+      )
+    );
+  }
+
+  async function loadArtists() {
+    setLoading(true);
+    setMessage("");
+
+    try {
+      /*
+        First determine whether artwork/client
+        filters restrict which artists are allowed.
+      */
+
+      let allowedArtistIds: number[] | null =
+        null;
+
+      if (artworkSearchText.trim() !== "") {
+        const artworkArtistIds =
+          await getArtistIdsFromArtworkSearch();
+
+        allowedArtistIds = intersectIds(
+          allowedArtistIds,
+          artworkArtistIds || []
+        );
+      }
+
+      if (buyerSearchText.trim() !== "") {
+        const buyerArtistIds =
+          await getArtistIdsFromBuyerSearch();
+
+        allowedArtistIds = intersectIds(
+          allowedArtistIds,
+          buyerArtistIds || []
+        );
+      }
+
+      /*
+        If artwork/client search was active,
+        but no artist matches, stop immediately.
+      */
+
+      if (
+        allowedArtistIds !== null &&
+        allowedArtistIds.length === 0
+      ) {
+        setArtists([]);
+        setTotalCount(0);
+        setLoading(false);
+        return;
+      }
+
+      const from =
+        (currentPage - 1) * ITEMS_PER_PAGE;
+
+      const to =
+        from + ITEMS_PER_PAGE - 1;
+
+      let query = supabase
+        .from("artists")
+        .select(
+          `
+            id,
+            name,
+            name_en,
+            name_jp,
+            artist_photo_url,
+            nationality,
+            birth_year
+          `,
+          {
+            count: "exact",
+          }
+        );
+
+      /*
+        Artist name search
+      */
+
+      if (artistSearchText.trim() !== "") {
+        const search = cleanSearch(
+          artistSearchText
+        );
+
+        query = query.or(
+          `name_en.ilike.%${search}%,name.ilike.%${search}%,name_jp.ilike.%${search}%`
+        );
+      }
+
+      /*
+        Restrict artists based on matching artworks
+        or clients if those searches are active.
+      */
+
+      if (allowedArtistIds !== null) {
+        query = query.in(
+          "id",
+          allowedArtistIds
+        );
+      }
+
+      const {
+        data,
+        error,
+        count,
+      } = await query
+        .order("name_en", {
+          ascending: true,
+          nullsFirst: false,
+        })
+        .range(from, to);
+
+      if (error) {
+        setMessage(error.message);
+        setArtists([]);
+        setTotalCount(0);
+        setLoading(false);
+        return;
+      }
+
+      const newTotalCount = count ?? 0;
+
+      const newTotalPages = Math.max(
+        1,
+        Math.ceil(
+          newTotalCount / ITEMS_PER_PAGE
+        )
+      );
+
+      /*
+        Prevent currentPage from being higher
+        than the number of pages after filtering.
+      */
+
+      if (
+        currentPage > newTotalPages &&
+        newTotalCount > 0
+      ) {
+        setCurrentPage(newTotalPages);
+        setLoading(false);
+        return;
+      }
+
+      setArtists(
+        (data || []) as Artist[]
+      );
+
+      setTotalCount(newTotalCount);
+      setLoading(false);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to load artists.";
+
+      setMessage(errorMessage);
+      setArtists([]);
+      setTotalCount(0);
+      setLoading(false);
     }
   }
 
+  /*
+    Reload current page when page/filter changes.
+  */
+
   useEffect(() => {
     loadArtists();
-  }, []);
-
-  useEffect(() => {
-    let result = artists;
-
-    if (artistSearchText.trim() !== "") {
-      const search = artistSearchText.trim().toLowerCase();
-
-      result = result.filter((artist) => {
-        const nameEn = artist.name_en?.toLowerCase() || "";
-        const name = artist.name?.toLowerCase() || "";
-        const nameJp = artist.name_jp?.toLowerCase() || "";
-
-        return (
-          nameEn.includes(search) ||
-          name.includes(search) ||
-          nameJp.includes(search)
-        );
-      });
-    }
-
-    if (artworkSearchText.trim() !== "") {
-      const search = artworkSearchText.trim().toLowerCase();
-
-      result = result.filter((artist) =>
-        artist.artworks?.some((artwork) => {
-          const titleEn = artwork.title_en?.toLowerCase() || "";
-          const titleJp = artwork.title_jp?.toLowerCase() || "";
-
-          return titleEn.includes(search) || titleJp.includes(search);
-        })
-      );
-    }
-
-    if (buyerSearchText.trim() !== "") {
-      const search = buyerSearchText.trim().toLowerCase();
-
-      result = result.filter((artist) =>
-        artist.artworks?.some((artwork) => {
-          const customer = Array.isArray(artwork.customers)
-            ? artwork.customers[0]
-            : artwork.customers;
-
-          const buyerName = customer?.name?.toLowerCase() || "";
-
-          return buyerName.includes(search);
-        })
-      );
-    }
-
-    if (activeCategory !== "All") {
-      result = result.filter((artist) =>
-        artist.artworks?.some((artwork) => artwork.category === activeCategory)
-      );
-    }
-
-    setFiltered(result);
   }, [
-    artists,
-    activeCategory,
+    currentPage,
     artistSearchText,
     artworkSearchText,
     buyerSearchText,
   ]);
 
+  /*
+    Any search change returns to page 1.
+  */
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    artistSearchText,
+    artworkSearchText,
+    buyerSearchText,
+  ]);
+
+  /*
+    Only show up to 5 page-number buttons.
+  */
+
+  function getVisiblePages() {
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible) {
+      return Array.from(
+        { length: totalPages },
+        (_, index) => index + 1
+      );
+    }
+
+    let start = Math.max(
+      1,
+      currentPage - 2
+    );
+
+    let end =
+      start + maxVisible - 1;
+
+    if (end > totalPages) {
+      end = totalPages;
+      start =
+        totalPages - maxVisible + 1;
+    }
+
+    return Array.from(
+      {
+        length: end - start + 1,
+      },
+      (_, index) => start + index
+    );
+  }
+
   return (
-    // <div
-    //   style={{
-    //     display: "grid",
-    //     gridTemplateColumns: "1fr 260px",
-    //     gap: "48px",
-    //     padding: "48px 72px",
-    //     maxWidth: "1600px",
-    //     margin: "0 auto",
-    //     alignItems: "start",
-    //   }}
-    // >
-
-    // for mobile
-
     <div className="artworks-layout">
-      
       <main>
         {message && (
-          <p style={{ marginBottom: "20px", color: "#9c1515" }}>{message}</p>
+          <p
+            style={{
+              marginBottom: "20px",
+              color: "#9c1515",
+            }}
+          >
+            {message}
+          </p>
         )}
 
-        {filtered.length === 0 ? (
+        {loading ? (
+          <p>Loading artists...</p>
+        ) : artists.length === 0 ? (
           <p>No artists found.</p>
         ) : (
-          // <div
-          //   style={{
-          //     display: "grid",
-          //     gridTemplateColumns: "repeat(3, minmax(220px, 1fr))",
-          //     gap: "56px 48px",
-          //     alignItems: "start",
-          //   }}
-          // >
+          <>
+            <div className="artworks-grid">
+              {artists.map((artist) => {
+                const displayName =
+                  artist.name_en ||
+                  artist.name ||
+                  artist.name_jp ||
+                  "Untitled Artist";
 
-          // for mobile
-          <div className="artworks-grid">
-
-            {filtered.map((artist) => {
-              const displayName =
-                artist.name_en ||
-                artist.name ||
-                artist.name_jp ||
-                "Untitled Artist";
-
-              return (
-                <Link
-                  key={artist.id}
-                  href={`/artists/${artist.id}`}
-                  style={{
-                    textDecoration: "none",
-                    color: "inherit",
-                  }}
-                >
-                  {artist.artist_photo_url && (
-                    <div
-                      style={{
-                        width: "100%",
-                        aspectRatio: "1 / 1",
-                        position: "relative",
-                        marginBottom: "16px",
-                        overflow: "hidden",
-                        background: "#f3f3f3",
-                      }}
-                    >
-                      <Image
-                        src={artist.artist_photo_url}
-                        alt={displayName}
-                        fill
-                        style={{ objectFit: "cover" }}
-                      />
-                    </div>
-                  )}
-
-                  <h2
+                return (
+                  <Link
+                    key={artist.id}
+                    href={`/artists/${artist.id}`}
                     style={{
-                      margin: "0 0 4px 0",
-                      fontSize: "20px",
-                      fontWeight: 700,
-                      lineHeight: 1.3,
+                      textDecoration: "none",
+                      color: "inherit",
                     }}
                   >
-                    {displayName}
-                  </h2>
+                    {artist.artist_photo_url && (
+                      <div
+                        style={{
+                          width: "100%",
+                          aspectRatio: "1 / 1",
+                          position: "relative",
+                          marginBottom: "16px",
+                          overflow: "hidden",
+                          background: "#f3f3f3",
+                        }}
+                      >
+                        <Image
+                          src={
+                            artist.artist_photo_url
+                          }
+                          alt={displayName}
+                          fill
+                          style={{
+                            objectFit: "cover",
+                          }}
+                        />
+                      </div>
+                    )}
 
-                  {artist.name_jp && artist.name_jp !== displayName && (
-                    <p
+                    <h2
                       style={{
-                        margin: "0 0 4px 0",
-                        fontSize: "14px",
-                        lineHeight: 1.4,
-                        color: "#555",
+                        margin:
+                          "0 0 4px 0",
+                        fontSize: "20px",
+                        fontWeight: 700,
+                        lineHeight: 1.3,
                       }}
                     >
-                      {artist.name_jp}
-                    </p>
-                  )}
+                      {displayName}
+                    </h2>
 
-                  {(artist.nationality || artist.birth_year) && (
-                    <p
+                    {artist.name_jp &&
+                      artist.name_jp !==
+                        displayName && (
+                        <p
+                          style={{
+                            margin:
+                              "0 0 4px 0",
+                            fontSize: "14px",
+                            lineHeight: 1.4,
+                            color: "#555",
+                          }}
+                        >
+                          {artist.name_jp}
+                        </p>
+                      )}
+
+                    {(artist.nationality ||
+                      artist.birth_year) && (
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: "14px",
+                          lineHeight: 1.4,
+                          color: "#555",
+                        }}
+                      >
+                        {[
+                          artist.nationality,
+                          artist.birth_year,
+                        ]
+                          .filter(Boolean)
+                          .join(", b. ")}
+                      </p>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+
+            {totalPages > 1 && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent:
+                    "center",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: "8px",
+                  marginTop: "56px",
+                }}
+              >
+                <button
+                  type="button"
+                  disabled={
+                    currentPage === 1
+                  }
+                  onClick={() =>
+                    setCurrentPage(
+                      (page) =>
+                        Math.max(
+                          1,
+                          page - 1
+                        )
+                    )
+                  }
+                  style={{
+                    padding:
+                      "8px 12px",
+                    border:
+                      "1px solid #bdbdbd",
+                    background: "white",
+                    color: "black",
+                    cursor:
+                      currentPage === 1
+                        ? "default"
+                        : "pointer",
+                    opacity:
+                      currentPage === 1
+                        ? 0.4
+                        : 1,
+                    fontSize: "13px",
+                  }}
+                >
+                  ← Previous
+                </button>
+
+                {getVisiblePages().map(
+                  (page) => (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() =>
+                        setCurrentPage(
+                          page
+                        )
+                      }
                       style={{
-                        margin: 0,
-                        fontSize: "14px",
-                        lineHeight: 1.4,
-                        color: "#555",
+                        minWidth: "36px",
+                        padding:
+                          "8px 10px",
+                        border:
+                          "1px solid #bdbdbd",
+                        background:
+                          currentPage ===
+                          page
+                            ? "#9c1515"
+                            : "white",
+                        color:
+                          currentPage ===
+                          page
+                            ? "white"
+                            : "black",
+                        cursor:
+                          "pointer",
+                        fontSize:
+                          "13px",
                       }}
                     >
-                      {[artist.nationality, artist.birth_year]
-                        .filter(Boolean)
-                        .join(", b. ")}
-                    </p>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
+                      {page}
+                    </button>
+                  )
+                )}
+
+                <button
+                  type="button"
+                  disabled={
+                    currentPage ===
+                    totalPages
+                  }
+                  onClick={() =>
+                    setCurrentPage(
+                      (page) =>
+                        Math.min(
+                          totalPages,
+                          page + 1
+                        )
+                    )
+                  }
+                  style={{
+                    padding:
+                      "8px 12px",
+                    border:
+                      "1px solid #bdbdbd",
+                    background: "white",
+                    color: "black",
+                    cursor:
+                      currentPage ===
+                      totalPages
+                        ? "default"
+                        : "pointer",
+                    opacity:
+                      currentPage ===
+                      totalPages
+                        ? 0.4
+                        : 1,
+                    fontSize: "13px",
+                  }}
+                >
+                  Next →
+                </button>
+              </div>
+            )}
+
+            <p
+              style={{
+                marginTop: "16px",
+                textAlign: "center",
+                fontSize: "12px",
+                color: "#777",
+              }}
+            >
+              {totalCount} artists · Page{" "}
+              {currentPage} of{" "}
+              {totalPages}
+            </p>
+          </>
         )}
       </main>
-<ArtworkFilterPanel
-  currentMode="artists"
-  addNewLabel="Add Artist"
-  addNewHref="/artists/new"
-  artistSearchText={artistSearchText}
-  setArtistSearchText={setArtistSearchText}
-  artworkSearchText={artworkSearchText}
-  setArtworkSearchText={setArtworkSearchText}
-  buyerSearchText={buyerSearchText}
-  setBuyerSearchText={setBuyerSearchText}
-  activeCategory={activeCategory}
-  setActiveCategory={setActiveCategory}
-  showCategory={false}
-  showStatus={false}
-  showPrice={false}
-/>
+
+      <ArtworkFilterPanel
+        currentMode="artists"
+        addNewLabel="Add Artist"
+        addNewHref="/artists/new"
+        artistSearchText={
+          artistSearchText
+        }
+        setArtistSearchText={
+          setArtistSearchText
+        }
+        artworkSearchText={
+          artworkSearchText
+        }
+        setArtworkSearchText={
+          setArtworkSearchText
+        }
+        buyerSearchText={
+          buyerSearchText
+        }
+        setBuyerSearchText={
+          setBuyerSearchText
+        }
+        activeCategory={
+          activeCategory
+        }
+        setActiveCategory={
+          setActiveCategory
+        }
+        showCategory={false}
+        showStatus={false}
+        showPrice={false}
+      />
     </div>
   );
 }

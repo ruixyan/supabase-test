@@ -73,12 +73,26 @@
   gap: 12px;
   position: sticky;
   top: 48px;
+  min-height: calc(100vh - 96px);
 }
 
 @media (max-width: 768px) {
   .sidebar {
     position: static;
     width: 100%;
+  }
+}
+
+.artist-works-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  gap: 56px 48px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .artist-works-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -198,5 +212,29 @@
 
   .navbar-links {
     gap: 16px;
+  }
+}
+
+@media print {
+  .navbar,
+  .price-list-controls {
+    display: none !important;
+  }
+
+  body {
+    margin: 0 !important;
+    background: white !important;
+  }
+
+  .price-list-preview {
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
+  @page {
+    size: Letter;
+    margin: 0.5in;
   }
 }

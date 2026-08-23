@@ -40,10 +40,18 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
 
-  const isProtectedRoute =
-    request.nextUrl.pathname.startsWith("/protected");
+  const pathname = request.nextUrl.pathname;
 
-  if (!user && isProtectedRoute) {
+  const isAuthRoute =
+    pathname.startsWith("/auth");
+
+  const isProtectedRoute =
+    pathname.startsWith("/artworks") ||
+    pathname.startsWith("/artists") ||
+    pathname.startsWith("/clients") ||
+    pathname.startsWith("/protected");
+
+  if (!user && isProtectedRoute && !isAuthRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
     return NextResponse.redirect(url);

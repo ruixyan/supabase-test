@@ -40,7 +40,7 @@ type Props = {
 
 const categoryOptions = [
   "All",
-  "Ceramic",
+  "Ceramics",
   "Metalwork",
   "Lacquer",
   "Glass",
@@ -92,47 +92,58 @@ export default function ArtworkFilterPanel({
   addNewHref,
 }: Props) {
   return (
-    // <aside
-    //   style={{
-    //     display: "flex",
-    //     flexDirection: "column",
-    //     gap: "12px",
-    //     position: "sticky",
-    //     top: "48px",
-    //   }}
-    // >
-
-    // for mobile
-    <aside className="sidebar"> 
+    <aside className="sidebar">
       {/* <ViewModePanel current={currentMode} /> */}
 
       {addNewLabel && addNewHref && (
-  <Link
-    href={addNewHref}
-    style={{
-      display: "block",
-      width: "100%",
-      padding: "10px 12px",
-      border: "1px solid #9c1515",
-      background: "white",
-      color: "#9c1515",
-      textDecoration: "none",
-      textAlign: "center",
-      fontSize: "13px",
-      fontWeight: 600,
-      boxSizing: "border-box",
-    }}
-  >
-    {addNewLabel}
-  </Link>
-)}
+        <Link
+          href={addNewHref}
+          style={{
+            display: "block",
+            width: "100%",
+            padding: "10px 12px",
+            border: "1px solid #9c1515",
+            background: "white",
+            color: "#9c1515",
+            textDecoration: "none",
+            textAlign: "center",
+            fontSize: "13px",
+            fontWeight: 600,
+            boxSizing: "border-box",
+          }}
+        >
+          {addNewLabel}
+        </Link>
+      )}
+
+      {currentMode === "artworks" && (
+        <Link
+          href="/artworks/price-list"
+          style={{
+            display: "block",
+            width: "100%",
+            padding: "10px 12px",
+            border: "1px solid #bdbdbd",
+            background: "white",
+            color: "black",
+            textDecoration: "none",
+            textAlign: "center",
+            fontSize: "13px",
+            boxSizing: "border-box",
+          }}
+        >
+          Create Price List
+        </Link>
+      )}
 
       {showArtistSearch && (
         <input
           type="text"
           placeholder="Search artist name"
           value={artistSearchText}
-          onChange={(event) => setArtistSearchText(event.target.value)}
+          onChange={(event) =>
+            setArtistSearchText(event.target.value)
+          }
           style={inputStyle}
         />
       )}
@@ -142,7 +153,9 @@ export default function ArtworkFilterPanel({
           type="text"
           placeholder="Search artwork name"
           value={artworkSearchText}
-          onChange={(event) => setArtworkSearchText(event.target.value)}
+          onChange={(event) =>
+            setArtworkSearchText(event.target.value)
+          }
           style={inputStyle}
         />
       )}
@@ -152,7 +165,9 @@ export default function ArtworkFilterPanel({
           type="text"
           placeholder="Search client name"
           value={buyerSearchText}
-          onChange={(event) => setBuyerSearchText(event.target.value)}
+          onChange={(event) =>
+            setBuyerSearchText(event.target.value)
+          }
           style={inputStyle}
         />
       )}
@@ -160,14 +175,19 @@ export default function ArtworkFilterPanel({
       {showCategory && (
         <select
           value={activeCategory}
-          onChange={(event) => setActiveCategory(event.target.value)}
+          onChange={(event) =>
+            setActiveCategory(event.target.value)
+          }
           style={{
             ...inputStyle,
             background: "white",
           }}
         >
           {categoryOptions.map((category) => (
-            <option key={category} value={category}>
+            <option
+              key={category}
+              value={category}
+            >
               {category}
             </option>
           ))}
@@ -183,20 +203,30 @@ export default function ArtworkFilterPanel({
           }}
         >
           {["Available", "Sold"].map((status) => {
-            const isActive = activeStatus === status;
+            const isActive =
+              activeStatus === status;
 
             return (
               <button
                 key={status}
                 type="button"
                 onClick={() =>
-                  setActiveStatus(isActive ? "All" : status)
+                  setActiveStatus(
+                    isActive
+                      ? "All"
+                      : status
+                  )
                 }
                 style={{
                   padding: "10px 12px",
-                  border: "1px solid #bdbdbd",
-                  background: isActive ? "#9c1515" : "white",
-                  color: isActive ? "white" : "black",
+                  border:
+                    "1px solid #bdbdbd",
+                  background: isActive
+                    ? "#9c1515"
+                    : "white",
+                  color: isActive
+                    ? "white"
+                    : "black",
                   cursor: "pointer",
                   fontSize: "13px",
                 }}
@@ -231,7 +261,9 @@ export default function ArtworkFilterPanel({
             min="0"
             placeholder="Min"
             value={minPrice}
-            onChange={(event) => setMinPrice(event.target.value)}
+            onChange={(event) =>
+              setMinPrice(event.target.value)
+            }
             style={{
               ...inputStyle,
               marginBottom: "8px",
@@ -243,7 +275,9 @@ export default function ArtworkFilterPanel({
             min="0"
             placeholder="Max"
             value={maxPrice}
-            onChange={(event) => setMaxPrice(event.target.value)}
+            onChange={(event) =>
+              setMaxPrice(event.target.value)
+            }
             style={inputStyle}
           />
         </div>

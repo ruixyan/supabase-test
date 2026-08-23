@@ -12,6 +12,7 @@ import {
 } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
+import ImageUploadField from "@/app/components/ImageUploadField";
 
 type Artist = {
   id: number;
@@ -42,6 +43,7 @@ type Artwork = {
   dimensions: string | null;
   category: string | null;
   is_sold: boolean;
+  is_unique: boolean;
   buyer_id: number | null;
   market_price: number | null;
   cost: number | null;
@@ -51,7 +53,7 @@ type Artwork = {
 
 const categoryOptions = [
   "All",
-  "Ceramic",
+  "Ceramics",
   "Metalwork",
   "Lacquer",
   "Glass",
@@ -84,6 +86,8 @@ export default function ArtworkDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+
   const [form, setForm] = useState({
     artist_id: "",
     title_en: "",
@@ -98,6 +102,7 @@ export default function ArtworkDetailPage() {
     extra_photo_link: "",
     fact_sheet_link: "",
     copy_info: "",
+    is_unique: true,
     is_sold: false,
     buyer_id: "",
   });
@@ -127,6 +132,7 @@ export default function ArtworkDetailPage() {
         material,
         dimensions,
         category,
+        is_unique,
         is_sold,
         buyer_id,
         market_price,
@@ -159,23 +165,24 @@ export default function ArtworkDetailPage() {
     setArtwork(data);
 
     setForm({
-      artist_id: data.artist_id ? String(data.artist_id) : "",
-      title_en: data.title_en || "",
-      title_jp: data.title_jp || "",
-      artwork_photo_url: data.artwork_photo_url || "",
-      year: data.year || "",
-      material: data.material || "",
-      dimensions: data.dimensions || "",
-      category: data.category || "",
-      market_price:
-        data.market_price !== null ? String(data.market_price) : "",
-      cost: data.cost !== null ? String(data.cost) : "",
-      extra_photo_link: data.extra_photo_link || "",
-      fact_sheet_link: data.fact_sheet_link || "",
-      copy_info: data.copy_info || "",
-      is_sold: data.is_sold,
-      buyer_id: data.buyer_id ? String(data.buyer_id) : "",
-    });
+  artist_id: data.artist_id ? String(data.artist_id) : "",
+  title_en: data.title_en || "",
+  title_jp: data.title_jp || "",
+  artwork_photo_url: data.artwork_photo_url || "",
+  year: data.year || "",
+  material: data.material || "",
+  dimensions: data.dimensions || "",
+  category: data.category || "",
+  market_price:
+    data.market_price !== null ? String(data.market_price) : "",
+  cost: data.cost !== null ? String(data.cost) : "",
+  extra_photo_link: data.extra_photo_link || "",
+  fact_sheet_link: data.fact_sheet_link || "",
+  copy_info: data.copy_info || "",
+  is_unique: data.is_unique,
+  is_sold: data.is_sold,
+  buyer_id: data.buyer_id ? String(data.buyer_id) : "",
+});
 
     setMessage("");
   }
@@ -279,7 +286,8 @@ export default function ArtworkDetailPage() {
 
 
       function generateCopyInfo() {
-        if (!artwork) return;
+        const currentArtwork = artwork;
+        if (!currentArtwork) return;
       
         const selectedArtist = artistOptions.find(
           (option) => option.id === Number(form.artist_id)
@@ -318,7 +326,7 @@ export default function ArtworkDetailPage() {
           form.dimensions.trim(),
           generatedMarketPrice,
           generatedMarketPrice
-            ? `Gallery Price: ${generatedMarketPrice}`
+            ? `Retail Price: ${generatedMarketPrice}`
             : "",
           generatedCost
             ? `Cost: ${generatedCost}`
@@ -384,8 +392,8 @@ export default function ArtworkDetailPage() {
 
   function markdownToHtml(text: string) {
     const formatted = escapeHtml(text)
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g, "<em>$1</em>");
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.+?)\*/g, "<em>$1</em>");
 
     return formatted
       .split("\n")
@@ -401,8 +409,8 @@ export default function ArtworkDetailPage() {
 
   function stripMarkdown(text: string) {
     return text
-      .replace(/\*\*(.+?)\*\*/gs, "$1")
-      .replace(/\*(.+?)\*/gs, "$1");
+      .replace(/\*\*(.+?)\*\*/g, "$1")
+      .replace(/\*(.+?)\*/g, "$1");
   }
 
   async function copyArtworkInfo() {
@@ -439,40 +447,88 @@ export default function ArtworkDetailPage() {
     setTimeout(() => setCopied(false), 1500);
   }
 
-  function cancelEditing() {
-    if (!artwork) return;
-  
-    setForm({
-      artist_id: artwork.artist_id
-        ? String(artwork.artist_id)
-        : "",
-      title_en: artwork.title_en || "",
-      title_jp: artwork.title_jp || "",
-      artwork_photo_url: artwork.artwork_photo_url || "",
-      year: artwork.year || "",
-      material: artwork.material || "",
-      dimensions: artwork.dimensions || "",
-      category: artwork.category || "",
-      market_price:
-        artwork.market_price !== null
-          ? String(artwork.market_price)
-          : "",
-      cost:
-        artwork.cost !== null
-          ? String(artwork.cost)
-          : "",
-      extra_photo_link: artwork.extra_photo_link || "",
-      fact_sheet_link: artwork.fact_sheet_link || "",
-      copy_info: artwork.copy_info || "",
-      is_sold: artwork.is_sold,
-      buyer_id: artwork.buyer_id
-        ? String(artwork.buyer_id)
-        : "",
-    });
+function cancelEditing() {
+  if (!artwork) return;
 
-    setMessage("");
-    setIsEditing(false);
+  setForm({
+    artist_id: artwork.artist_id
+      ? String(artwork.artist_id)
+      : "",
+    title_en: artwork.title_en || "",
+    title_jp: artwork.title_jp || "",
+    artwork_photo_url: artwork.artwork_photo_url || "",
+    year: artwork.year || "",
+    material: artwork.material || "",
+    dimensions: artwork.dimensions || "",
+    category: artwork.category || "",
+    market_price:
+      artwork.market_price !== null
+        ? String(artwork.market_price)
+        : "",
+    cost:
+      artwork.cost !== null
+        ? String(artwork.cost)
+        : "",
+    extra_photo_link: artwork.extra_photo_link || "",
+    fact_sheet_link: artwork.fact_sheet_link || "",
+    copy_info: artwork.copy_info || "",
+    is_unique: artwork.is_unique,
+    is_sold: artwork.is_sold,
+    buyer_id: artwork.buyer_id
+      ? String(artwork.buyer_id)
+      : "",
+  });
+
+  setMessage("");
+  setIsEditing(false);
+}
+
+async function deleteArtwork() {
+  if (!artwork) return;
+
+  const confirmed = window.confirm(
+    `Are you sure you want to delete "${
+      artwork.title_en || artwork.title_jp || "this artwork"
+    }"? This cannot be undone.`
+  );
+
+  if (!confirmed) return;
+
+  setSaving(true);
+  setMessage("");
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  console.log("CURRENT USER:", user);
+
+  const { data, error } = await supabase
+    .from("artworks")
+    .delete()
+    .eq("id", artwork.id)
+    .select("id");
+
+  console.log("DELETE artwork id:", artwork.id);
+  console.log("DELETE data:", data);
+  console.log("DELETE error:", error);
+
+  if (error) {
+    setMessage(`Delete failed: ${error.message}`);
+    setSaving(false);
+    return;
   }
+
+  if (!data || data.length === 0) {
+    setMessage(
+      "Delete request completed, but no artwork was deleted."
+    );
+    setSaving(false);
+    return;
+  }
+
+  window.location.href = "/artworks";
+}
 
   async function saveArtwork(
     event: React.FormEvent<HTMLFormElement>
@@ -513,50 +569,44 @@ export default function ArtworkDetailPage() {
     setMessage("");
 
     const { error } = await supabase
-      .from("artworks")
-      .update({
-        artist_id: selectedArtist.id,
-        artist_name: selectedArtistName,
-        artist_photo_url:
-          selectedArtist.artist_photo_url || null,
+  .from("artworks")
+  .update({
+    artist_id: selectedArtist.id,
+    artist_name: selectedArtistName,
+    artist_photo_url: selectedArtist.artist_photo_url || null,
 
-        title_en: form.title_en.trim() || null,
-        title_jp: form.title_jp.trim() || null,
-        artwork_photo_url:
-          form.artwork_photo_url.trim() || null,
+    title_en: form.title_en.trim() || null,
+    title_jp: form.title_jp.trim() || null,
+    artwork_photo_url: form.artwork_photo_url.trim() || null,
 
-        year: form.year.trim() || null,
-        material: form.material.trim() || null,
-        dimensions: form.dimensions.trim() || null,
-        category: form.category || null,
+    year: form.year.trim() || null,
+    material: form.material.trim() || null,
+    dimensions: form.dimensions.trim() || null,
+    category: form.category || null,
 
-        market_price:
-          form.market_price.trim() === ""
-            ? null
-            : Number(form.market_price),
+    market_price:
+      form.market_price.trim() === ""
+        ? null
+        : Number(form.market_price),
 
-        cost:
-          form.cost.trim() === ""
-            ? null
-            : Number(form.cost),
+    cost:
+      form.cost.trim() === ""
+        ? null
+        : Number(form.cost),
 
-        extra_photo_link:
-          form.extra_photo_link.trim() || null,
+    extra_photo_link: form.extra_photo_link.trim() || null,
+    fact_sheet_link: form.fact_sheet_link.trim() || null,
+    copy_info: form.copy_info.trim() || null,
 
-        fact_sheet_link:
-          form.fact_sheet_link.trim() || null,
+    is_unique: form.is_unique,
+    is_sold: form.is_sold,
 
-        copy_info:
-          form.copy_info.trim() || null,
-
-        is_sold: form.is_sold,
-
-        buyer_id:
-          form.is_sold && form.buyer_id
-            ? Number(form.buyer_id)
-            : null,
-      })
-      .eq("id", id);
+    buyer_id:
+      form.is_sold && form.buyer_id
+        ? Number(form.buyer_id)
+        : null,
+  })
+  .eq("id", id);
 
     if (error) {
       setMessage(error.message);
@@ -618,7 +668,9 @@ export default function ArtworkDetailPage() {
             >
               Edit Artwork
             </button>
+            
           </div>
+          
 
           {/* <section
             style={{
@@ -724,7 +776,7 @@ export default function ArtworkDetailPage() {
                     fontSize: "16px",
                   }}
                 >
-                  <strong>Market Price:</strong>{" "}
+                  <strong>Retail Price:</strong>{" "}
                   {marketPriceText}
                 </p>
               )}
@@ -735,19 +787,37 @@ export default function ArtworkDetailPage() {
                 </p>
               )}
 
-              <span
-                style={{
-                  display: "inline-block",
-                  marginTop: "16px",
-                  padding: "6px 12px",
-                  border: "1px solid #bdbdbd",
-                  color: artwork.is_sold
-                    ? "#9c1515"
-                    : "#444",
-                }}
-              >
-                {artwork.is_sold ? "Sold" : "Available"}
-              </span>
+              <div
+  style={{
+    display: "flex",
+    gap: "8px",
+    marginTop: "16px",
+  }}
+>
+  <span
+    style={{
+      display: "inline-block",
+      padding: "6px 12px",
+      border: "1px solid #bdbdbd",
+      color: "#444",
+      fontSize: "14px",
+    }}
+  >
+    {artwork.is_unique ? "Unique" : "Multiple"}
+  </span>
+
+  <span
+    style={{
+      display: "inline-block",
+      padding: "6px 12px",
+      border: "1px solid #bdbdbd",
+      color: artwork.is_sold ? "#9c1515" : "#444",
+      fontSize: "14px",
+    }}
+  >
+    {artwork.is_sold ? "Sold" : "Available"}
+  </span>
+</div>
 
               <div style={{ marginTop: "24px" }}>
                 {artwork.extra_photo_link && (
@@ -915,21 +985,18 @@ export default function ArtworkDetailPage() {
               />
             </FormField>
 
-            <FormField label="Artwork Photo URL">
-              <input
-                type="url"
-                value={form.artwork_photo_url}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    artwork_photo_url:
-                      event.target.value,
-                  })
-                }
-                placeholder="https://..."
-                style={inputStyle}
-              />
-            </FormField>
+     <ImageUploadField
+  label="Artwork Image"
+  bucket="artworks"
+  folder="main-images"
+  value={form.artwork_photo_url}
+  onChange={(url) =>
+    setForm({
+      ...form,
+      artwork_photo_url: url,
+    })
+  }
+/>
 
             <FormField label="Year">
               <input
@@ -1006,7 +1073,7 @@ export default function ArtworkDetailPage() {
               </select>
             </FormField>
 
-            <FormField label="Market Price (USD)">
+            <FormField label="Retail Price (USD)">
               <input
                 type="number"
                 min="0"
@@ -1152,62 +1219,110 @@ export default function ArtworkDetailPage() {
                 </button>
               </div>
 
-              <textarea
-                ref={copyInfoRef}
-                value={form.copy_info}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    copy_info: event.target.value,
-                  })
-                }
-                placeholder="Enter copy information..."
-                style={{
-                  ...inputStyle,
-                  minHeight: "260px",
-                  resize: "vertical",
-                  lineHeight: 1,
-                }}
-              />
+<textarea
+  ref={copyInfoRef}
+  value={form.copy_info}
+  onChange={(event) =>
+    setForm({
+      ...form,
+      copy_info: event.target.value,
+    })
+  }
+  placeholder="Enter copy information..."
+  style={{
+    ...inputStyle,
+    minHeight: "260px",
+    resize: "vertical",
+    fontFamily: "Arial, sans-serif",
+    lineHeight: 1.6,
+  }}
+/>
 
-              <div
-                style={{
-                  marginTop: "16px",
-                  padding: "16px",
-                  border: "1px solid #ddd",
-                  background: "#fafafa",
-                  lineHeight: 1,
-                }}
-              >
-                {form.copy_info.trim() ? (
-                  <ReactMarkdown
-                    components={{
-                      p: ({ children }) => (
-                        <p
-                          style={{
-                            margin: "0 0 12px 0",
-                          }}
-                        >
-                          {children}
-                        </p>
-                      ),
-                    }}
-                  >
-                    {form.copy_info}
-                  </ReactMarkdown>
-                ) : (
-                  <p
-                    style={{
-                      margin: 0,
-                      color: "#777",
-                    }}
-                  >
-                    Copy information preview
-                  </p>
-                )}
-              </div>
+<div
+  style={{
+    marginTop: "16px",
+    padding: "16px",
+    border: "1px solid #ddd",
+    background: "white",
+    lineHeight: 1.7,
+    whiteSpace: "pre-wrap",
+  }}
+>
+  {form.copy_info.trim() ? (
+    <ReactMarkdown
+      components={{
+        p: ({ children }) => (
+          <p style={{ margin: "0 0 12px 0" }}>
+            {children}
+          </p>
+        ),
+      }}
+    >
+      {form.copy_info}
+    </ReactMarkdown>
+  ) : (
+    <p
+      style={{
+        margin: 0,
+        color: "#777",
+        fontSize: "14px",
+      }}
+    >
+      Copy information preview
+    </p>
+  )}
+</div>
             </section>
+<div>
+  <label
+    style={{
+      display: "block",
+      marginBottom: "8px",
+      fontSize: "13px",
+      fontWeight: 600,
+    }}
+  >
+    Edition Type
+  </label>
 
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: "8px",
+    }}
+  >
+    {[
+      { label: "Unique", value: true },
+      { label: "Multiple", value: false },
+    ].map((option) => {
+      const isActive = form.is_unique === option.value;
+
+      return (
+        <button
+          key={option.label}
+          type="button"
+          onClick={() =>
+            setForm({
+              ...form,
+              is_unique: option.value,
+            })
+          }
+          style={{
+            padding: "10px 12px",
+            border: "1px solid #bdbdbd",
+            background: isActive ? "#9c1515" : "white",
+            color: isActive ? "white" : "black",
+            cursor: "pointer",
+            fontSize: "13px",
+          }}
+        >
+          {option.label}
+        </button>
+      );
+    })}
+  </div>
+</div>
             <div>
               <label
                 style={{
@@ -1308,47 +1423,69 @@ export default function ArtworkDetailPage() {
               </FormField>
             )}
 
-            <div
-              style={{
-                display: "flex",
-                gap: "10px",
-                marginTop: "6px",
-              }}
-            >
-              <button
-                type="submit"
-                disabled={saving}
-                style={{
-                  padding: "11px 16px",
-                  border: "1px solid #9c1515",
-                  background: "#9c1515",
-                  color: "white",
-                  cursor: saving
-                    ? "default"
-                    : "pointer",
-                  opacity: saving ? 0.6 : 1,
-                }}
-              >
-                {saving ? "Saving..." : "Save Changes"}
-              </button>
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "16px",
+    marginTop: "6px",
+  }}
+>
+  <div
+    style={{
+      display: "flex",
+      gap: "10px",
+    }}
+  >
+    <button
+      type="submit"
+      disabled={saving}
+      style={{
+        padding: "11px 16px",
+        border: "1px solid #9c1515",
+        background: "#9c1515",
+        color: "white",
+        cursor: saving ? "default" : "pointer",
+        opacity: saving ? 0.6 : 1,
+      }}
+    >
+      {saving ? "Saving..." : "Save Changes"}
+    </button>
 
-              <button
-                type="button"
-                disabled={saving}
-                onClick={cancelEditing}
-                style={{
-                  padding: "11px 16px",
-                  border: "1px solid #bdbdbd",
-                  background: "white",
-                  color: "black",
-                  cursor: saving
-                    ? "default"
-                    : "pointer",
-                }}
-              >
-                Cancel
-              </button>
-            </div>
+    <button
+      type="button"
+      disabled={saving}
+      onClick={cancelEditing}
+      style={{
+        padding: "11px 16px",
+        border: "1px solid #bdbdbd",
+        background: "white",
+        color: "black",
+        cursor: saving ? "default" : "pointer",
+        opacity: saving ? 0.6 : 1,
+      }}
+    >
+      Cancel
+    </button>
+  </div>
+
+  <button
+    type="button"
+    disabled={saving}
+    onClick={deleteArtwork}
+    style={{
+      padding: "11px 16px",
+      border: "1px solid #9c1515",
+      background: "white",
+      color: "#9c1515",
+      cursor: saving ? "default" : "pointer",
+      opacity: saving ? 0.6 : 1,
+    }}
+  >
+    Delete Artwork
+  </button>
+</div>
 
             {message && (
               <p
@@ -1379,18 +1516,43 @@ export default function ArtworkDetailPage() {
   {artwork.copy_info ? (
     <div
       style={{
-        whiteSpace: "pre-wrap",
-        lineHeight: 1.7,
+        lineHeight: 1.6,
       }}
     >
-      <ReactMarkdown
-        remarkPlugins={[remarkBreaks]}
-        components={{
-          p: ({ children }) => <>{children}</>,
-        }}
-      >
-        {artwork.copy_info}
-      </ReactMarkdown>
+      {artwork.copy_info.split("\n").map((line, index) => {
+        if (line.trim() === "") {
+          return (
+            <div
+              key={index}
+              style={{
+                height: "1.6em",
+              }}
+            />
+          );
+        }
+
+        return (
+          <div key={index}>
+            <ReactMarkdown
+              components={{
+                p: ({ children }) => <>{children}</>,
+                strong: ({ children }) => (
+                  <strong style={{ fontWeight: 700 }}>
+                    {children}
+                  </strong>
+                ),
+                em: ({ children }) => (
+                  <em style={{ fontStyle: "italic" }}>
+                    {children}
+                  </em>
+                ),
+              }}
+            >
+              {line}
+            </ReactMarkdown>
+          </div>
+        );
+      })}
     </div>
   ) : (
     <p

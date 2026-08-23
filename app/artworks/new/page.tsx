@@ -11,6 +11,7 @@ import {
   type RefObject,
 } from "react";
 import ReactMarkdown from "react-markdown";
+import ImageUploadField from "@/app/components/ImageUploadField";
 
 type ArtistOption = {
   id: number;
@@ -27,7 +28,7 @@ type ClientOption = {
 
 const categoryOptions = [
   "All",
-  "Ceramic",
+  "Ceramics",
   "Metalwork",
   "Lacquer",
   "Glass",
@@ -57,6 +58,7 @@ export default function NewArtworkPage() {
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState("");
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
 
   const [form, setForm] = useState({
     artist_id: "",
@@ -73,6 +75,7 @@ export default function NewArtworkPage() {
     fact_sheet_link: "",
     copy_info: "",
     is_sold: false,
+      is_unique: true,
     buyer_id: "",
   });
 
@@ -146,18 +149,12 @@ export default function NewArtworkPage() {
     const title = form.title_en.trim() || form.title_jp.trim();
 
     const generatedText = `**${artistDisplayName}**
-
-*${title}${form.year.trim() ? `, ${form.year.trim()}` : ""}*
-
+*${title}*${form.year.trim() ? `, ${form.year.trim()}` : ""}
 ${form.material.trim()}
-
 ${form.dimensions.trim()}
-
 ${marketPrice}
 
-
-Gallery Price: ${marketPrice}
-
+Retail Price: ${marketPrice}
 Cost: ${cost}`;
 
     setForm((current) => ({
@@ -219,8 +216,8 @@ Cost: ${cost}`;
 
   function markdownToHtml(text: string) {
     return escapeHtml(text)
-      .replace(/\*\*(.+?)\*\*/gs, "<strong>$1</strong>")
-      .replace(/\*(.+?)\*/gs, "<em>$1</em>")
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.+?)\*/g, "<em>$1</em>")
       .split("\n")
       .map((line) => {
         if (line.trim() === "") {
@@ -234,8 +231,8 @@ Cost: ${cost}`;
 
   function stripMarkdown(text: string) {
     return text
-      .replace(/\*\*(.+?)\*\*/gs, "$1")
-      .replace(/\*(.+?)\*/gs, "$1");
+      .replace(/\*\*(.+?)\*\*/g, "$1")
+      .replace(/\*(.+?)\*/g, "$1");
   }
 
   async function copyInformation() {
@@ -266,7 +263,29 @@ Cost: ${cost}`;
     setTimeout(() => setCopied(false), 1500);
   }
 
+  let artworkPhotoUrl = form.artwork_photo_url.trim() || null;
+  
   async function addArtwork(event: React.FormEvent<HTMLFormElement>) {
+    if (uploadedImage) {
+  const fileExt = uploadedImage.name.split(".").pop();
+  const fileName = `${Date.now()}.${fileExt}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("artworks")
+    .upload(fileName, uploadedImage);
+
+  if (uploadError) {
+    setMessage(uploadError.message);
+    setSubmitting(false);
+    return;
+  }
+
+  const { data } = supabase.storage
+    .from("artworks")
+    .getPublicUrl(fileName);
+
+  artworkPhotoUrl = data.publicUrl;
+}
     event.preventDefault();
 
     if (!form.artist_id) {
@@ -309,7 +328,6 @@ Cost: ${cost}`;
           title_en: form.title_en.trim() || null,
           title_jp: form.title_jp.trim() || null,
           artwork_photo_url: form.artwork_photo_url.trim() || null,
-
           year: form.year.trim() || null,
           material: form.material.trim() || null,
           dimensions: form.dimensions.trim() || null,
@@ -361,7 +379,7 @@ Cost: ${cost}`;
         width: "100%",
         maxWidth: "760px",
         margin: "0 auto",
-        padding: "48px 72px",
+        padding: "24px 36px",
       }}
     >
       <Link
@@ -445,33 +463,31 @@ Cost: ${cost}`;
           </FormField>
 
           <FormField label="Japanese Title">
-            <input
-              type="text"
-              value={form.title_jp}
-              onChange={(event) =>
-                setForm({
-                  ...form,
-                  title_jp: event.target.value,
-                })
-              }
-              style={inputStyle}
-            />
-          </FormField>
+  <input
+    type="text"
+    value={form.title_jp}
+    onChange={(event) =>
+      setForm({
+        ...form,
+        title_jp: event.target.value,
+      })
+    }
+    style={inputStyle}
+  />
+</FormField>
 
-          <FormField label="Artwork Photo URL">
-            <input
-              type="url"
-              value={form.artwork_photo_url}
-              onChange={(event) =>
-                setForm({
-                  ...form,
-                  artwork_photo_url: event.target.value,
-                })
-              }
-              placeholder="https://..."
-              style={inputStyle}
-            />
-          </FormField>
+  <ImageUploadField
+  label="Artwork Image"
+  bucket="artworks"
+  folder="main-images"
+  value={form.artwork_photo_url}
+  onChange={(url) =>
+    setForm((current) => ({
+      ...current,
+      artwork_photo_url: url,
+    }))
+  }
+/>
 
           <FormField label="Year">
             <input
@@ -543,7 +559,7 @@ Cost: ${cost}`;
             </select>
           </FormField>
 
-          <FormField label="Market Price (USD)">
+          <FormField label="Retail Price (USD)">
             <input
               type="number"
               min="0"
@@ -762,94 +778,145 @@ Cost: ${cost}`;
             </button>
           </section>
 
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "8px",
-                fontSize: "13px",
-                fontWeight: 600,
-              }}
-            >
-              Status
-            </label>
+<div>
+  <label
+    style={{
+      display: "block",
+      marginBottom: "8px",
+      fontSize: "13px",
+      fontWeight: 600,
+    }}
+  >
+    Edition Type
+  </label>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "8px",
-              }}
-            >
-              <button
-                type="button"
-                onClick={() =>
-                  setForm({
-                    ...form,
-                    is_sold: false,
-                    buyer_id: "",
-                  })
-                }
-                style={{
-                  padding: "10px 12px",
-                  border: "1px solid #bdbdbd",
-                  background: !form.is_sold ? "#9c1515" : "white",
-                  color: !form.is_sold ? "white" : "black",
-                  cursor: "pointer",
-                  fontSize: "13px",
-                }}
-              >
-                Available
-              </button>
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: "8px",
+    }}
+  >
+    {[
+      { label: "Unique", value: true },
+      { label: "Multiple", value: false },
+    ].map((option) => {
+      const isActive = form.is_unique === option.value;
 
-              <button
-                type="button"
-                onClick={() =>
-                  setForm({
-                    ...form,
-                    is_sold: true,
-                  })
-                }
-                style={{
-                  padding: "10px 12px",
-                  border: "1px solid #bdbdbd",
-                  background: form.is_sold ? "#9c1515" : "white",
-                  color: form.is_sold ? "white" : "black",
-                  cursor: "pointer",
-                  fontSize: "13px",
-                }}
-              >
-                Sold
-              </button>
-            </div>
-          </div>
+      return (
+        <button
+          key={option.label}
+          type="button"
+          onClick={() =>
+            setForm({
+              ...form,
+              is_unique: option.value,
+            })
+          }
+          style={{
+            padding: "10px 12px",
+            border: "1px solid #bdbdbd",
+            background: isActive ? "#9c1515" : "white",
+            color: isActive ? "white" : "black",
+            cursor: "pointer",
+            fontSize: "13px",
+          }}
+        >
+          {option.label}
+        </button>
+      );
+    })}
+  </div>
+</div>
 
-          {form.is_sold && (
-            <FormField label="Client">
-              <select
-                value={form.buyer_id}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    buyer_id: event.target.value,
-                  })
-                }
-                style={{
-                  ...inputStyle,
-                  background: "white",
-                }}
-                required
-              >
-                <option value="">Select a client</option>
+<div>
+  <label
+    style={{
+      display: "block",
+      marginBottom: "8px",
+      fontSize: "13px",
+      fontWeight: 600,
+    }}
+  >
+    Status
+  </label>
 
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-          )}
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: "8px",
+    }}
+  >
+    <button
+      type="button"
+      onClick={() =>
+        setForm({
+          ...form,
+          is_sold: false,
+          buyer_id: "",
+        })
+      }
+      style={{
+        padding: "10px 12px",
+        border: "1px solid #bdbdbd",
+        background: !form.is_sold ? "#9c1515" : "white",
+        color: !form.is_sold ? "white" : "black",
+        cursor: "pointer",
+        fontSize: "13px",
+      }}
+    >
+      Available
+    </button>
+
+    <button
+      type="button"
+      onClick={() =>
+        setForm({
+          ...form,
+          is_sold: true,
+        })
+      }
+      style={{
+        padding: "10px 12px",
+        border: "1px solid #bdbdbd",
+        background: form.is_sold ? "#9c1515" : "white",
+        color: form.is_sold ? "white" : "black",
+        cursor: "pointer",
+        fontSize: "13px",
+      }}
+    >
+      Sold
+    </button>
+  </div>
+</div>
+
+{form.is_sold && (
+  <FormField label="Client">
+    <select
+      value={form.buyer_id}
+      onChange={(event) =>
+        setForm({
+          ...form,
+          buyer_id: event.target.value,
+        })
+      }
+      style={{
+        ...inputStyle,
+        background: "white",
+      }}
+      required
+    >
+      <option value="">Select a client</option>
+
+      {clients.map((client) => (
+        <option key={client.id} value={client.id}>
+          {client.name}
+        </option>
+      ))}
+    </select>
+  </FormField>
+)}
 
           <button
             type="submit"
