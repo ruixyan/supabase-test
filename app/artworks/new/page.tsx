@@ -70,7 +70,7 @@ export default function NewArtworkPage() {
     year: "",
     material: "",
     dimensions: "",
-    category: "Metalwork",
+    category: "All",
     market_price: "",
     cost: "",
     note: "",
@@ -309,7 +309,7 @@ Cost: ${cost}`;
           year: form.year.trim() || null,
           material: form.material.trim() || null,
           dimensions: form.dimensions.trim() || null,
-          category: form.category || null,
+          category: form.category === "All" ? null : form.category || null,
 
           market_price:
             form.market_price.trim() === ""
