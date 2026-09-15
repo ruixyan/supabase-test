@@ -1,5 +1,7 @@
 "use client";
 
+import { normalizeSearch } from "@/lib/search";
+
 import { useState } from "react";
 
 export default function ClientSelect({ clients, value, onChange }: {
@@ -9,7 +11,7 @@ export default function ClientSelect({ clients, value, onChange }: {
 }) {
   const [search, setSearch] = useState("");
   const matches = clients.filter((client) =>
-    String(client.id) === value || client.name.toLowerCase().includes(search.trim().toLowerCase())
+    String(client.id) === value || normalizeSearch(client.name).includes(normalizeSearch(search))
   );
   return (
     <div className="space-y-2">

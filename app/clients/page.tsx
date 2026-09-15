@@ -1,5 +1,7 @@
 "use client";
 
+import { normalizeSearch } from "@/lib/search";
+
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useMemo, useState } from "react";
 import { ClientHighlightBadges } from "@/app/components/ClientHighlights";
@@ -94,12 +96,12 @@ export default function ClientsPage() {
     let result = clients;
 
     if (buyerSearchText.trim() !== "") {
-      const search = buyerSearchText.trim().toLowerCase();
+      const search = normalizeSearch(buyerSearchText);
 
       result = result.filter((client) => {
-        const name = client.name?.toLowerCase() || "";
-        const email = client.email?.toLowerCase() || "";
-        const phone = client.phone?.toLowerCase() || "";
+        const name = normalizeSearch(client.name);
+        const email = normalizeSearch(client.email);
+        const phone = normalizeSearch(client.phone);
 
         return (
           name.includes(search) ||
@@ -110,12 +112,12 @@ export default function ClientsPage() {
     }
 
     if (artworkSearchText.trim() !== "") {
-      const search = artworkSearchText.trim().toLowerCase();
+      const search = normalizeSearch(artworkSearchText);
 
       result = result.filter((client) =>
         client.artworks?.some((artwork) => {
-          const titleEn = artwork.title_en?.toLowerCase() || "";
-          const titleJp = artwork.title_jp?.toLowerCase() || "";
+          const titleEn = normalizeSearch(artwork.title_en);
+          const titleJp = normalizeSearch(artwork.title_jp);
 
           return titleEn.includes(search) || titleJp.includes(search);
         })

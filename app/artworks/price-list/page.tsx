@@ -1,5 +1,7 @@
 "use client";
 
+import { normalizeSearch } from "@/lib/search";
+
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -91,24 +93,24 @@ export default function PriceListPage() {
   const filteredArtworks = artworks.filter(
     (artwork) => {
       const search =
-        searchText.trim().toLowerCase();
+        normalizeSearch(searchText);
 
       if (!search) return true;
 
       const artistName =
-        artwork.artist_name?.toLowerCase() || "";
+        normalizeSearch(artwork.artist_name);
 
       const titleEn =
-        artwork.title_en?.toLowerCase() || "";
+        normalizeSearch(artwork.title_en);
 
       const titleJp =
-        artwork.title_jp?.toLowerCase() || "";
+        normalizeSearch(artwork.title_jp);
 
       const year =
-        artwork.year?.toLowerCase() || "";
+        normalizeSearch(artwork.year);
 
       const category =
-        artwork.category?.toLowerCase() || "";
+        normalizeSearch(artwork.category);
 
       return (
         artistName.includes(search) ||

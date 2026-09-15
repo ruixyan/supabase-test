@@ -1,10 +1,11 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import ArtworkFilterPanel from "@/app/components/ArtworkFilterPanel";
+import { loadAllRows, matchesSearch } from "@/lib/search";
 import ReactMarkdown from "react-markdown";
 
 type Customer =
@@ -40,12 +41,10 @@ type Artwork = {
 const ITEMS_PER_PAGE = 12;
 
 export default function ArtworksPage() {
-  const supabase = createClient();
 
   const [restored, setRestored] = useState(false);
   const restoreScroll = useRef(true);
-  const requestId = useRef(0);
-  const [artworks, setArtworks] = useState<Artwork[]>([]);
+  const [allArtworks, setAllArtworks] = useState<Artwork[]>([]);
 
   const [activeCategory, setActiveCategory] = useState("All");
   const [activeStatus, setActiveStatus] = useState("All");
@@ -58,15 +57,24 @@ export default function ArtworksPage() {
   const [buyerSearchText, setBuyerSearchText] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
+
 
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(totalCount / ITEMS_PER_PAGE)
-  );
+  const filteredArtworks = useMemo(() => allArtworks.filter((artwork) => {
+    const buyers = Array.isArray(artwork.customers) ? artwork.customers : artwork.customers ? [artwork.customers] : [];
+    return matchesSearch(artwork.artist_name, artistSearchText)
+      && [artwork.title_en, artwork.title_jp].some((title) => matchesSearch(title, artworkSearchText))
+      && (!buyerSearchText.trim() || buyers.some((buyer) => matchesSearch(buyer.name, buyerSearchText)))
+      && (activeCategory === "All" || artwork.category === activeCategory)
+      && (activeStatus === "All" || (activeStatus === "Sold" ? artwork.is_sold : activeStatus === "Not Available" ? artwork.is_unavailable && !artwork.is_sold : !artwork.is_sold && !artwork.is_unavailable))
+      && (!minPrice.trim() || (artwork.market_price !== null && artwork.market_price >= Number(minPrice)))
+      && (!maxPrice.trim() || (artwork.market_price !== null && artwork.market_price <= Number(maxPrice)));
+  }), [allArtworks, artistSearchText, artworkSearchText, buyerSearchText, activeCategory, activeStatus, minPrice, maxPrice]);
+  const totalCount = filteredArtworks.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
+  const artworks = filteredArtworks.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   useEffect(() => {
     try {
@@ -89,232 +97,28 @@ export default function ArtworksPage() {
     if (restored) sessionStorage.setItem("artworkListState", JSON.stringify({ activeCategory, activeStatus, minPrice, maxPrice, artistSearchText, artworkSearchText, buyerSearchText, currentPage }));
   }, [restored, activeCategory, activeStatus, minPrice, maxPrice, artistSearchText, artworkSearchText, buyerSearchText, currentPage]);
 
-  async function loadArtworks() {
-    const thisRequest = ++requestId.current;
-    setLoading(true);
-    setMessage("");
+  useEffect(() => {
+    let active = true;
+    const client = createClient();
+    loadAllRows<Artwork>((from, to) => client.from("artworks")
+      .select("id, artist_name, artist_photo_url, artwork_photo_url, title_jp, title_en, year, market_price, material, dimensions, category, is_unique, is_sold, is_unavailable, created_at, customers(id, name)", { count: "exact" })
+      .order("created_at", { ascending: false }).order("id", { ascending: false }).range(from, to))
+      .then((data) => { if (active) setAllArtworks(data); })
+      .catch((error: Error) => { if (active) setMessage(error.message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
-    const from = (currentPage - 1) * ITEMS_PER_PAGE;
-    const to = from + ITEMS_PER_PAGE - 1;
+  useEffect(() => {
+    if (!loading && restored && currentPage > totalPages) setCurrentPage(totalPages);
+  }, [loading, restored, currentPage, totalPages]);
 
-    const hasBuyerSearch =
-      buyerSearchText.trim() !== "";
-
-    /*
-      Important:
-
-      When searching Client, use !inner so only artworks
-      whose related customer matches are returned.
-
-      Otherwise use the normal relation so Available
-      artworks with no buyer are still returned.
-    */
-
-    const customerSelect = hasBuyerSearch
-      ? `
-        customers!inner (
-          id,
-          name
-        )
-      `
-      : `
-        customers (
-          id,
-          name
-        )
-      `;
-
-    let query = supabase
-      .from("artworks")
-      .select(
-        `
-          id,
-          artist_name,
-          artist_photo_url,
-          artwork_photo_url,
-          title_jp,
-          title_en,
-          year,
-          market_price,
-          material,
-          dimensions,
-          category,
-          is_unique,
-          is_sold,
-          is_unavailable,
-          created_at,
-          ${customerSelect}
-        `,
-        {
-          count: "exact",
-        }
-      );
-
-    // Artist search
-    if (artistSearchText.trim() !== "") {
-      query = query.ilike(
-        "artist_name",
-        `%${artistSearchText.trim()}%`
-      );
-    }
-
-    // Artwork title search
-    if (artworkSearchText.trim() !== "") {
-      const search = artworkSearchText
-        .trim()
-        .replaceAll(",", " ");
-
-      query = query.or(
-        `title_en.ilike.%${search}%,title_jp.ilike.%${search}%`
-      );
-    }
-
-    // Client search
-    if (hasBuyerSearch) {
-      query = query.ilike(
-        "customers.name",
-        `%${buyerSearchText.trim()}%`
-      );
-    }
-
-    // Category
-    if (activeCategory !== "All") {
-      query = query.eq(
-        "category",
-        activeCategory
-      );
-    }
-
-    // Status
-    if (activeStatus === "Available") {
-      query = query.eq(
-        "is_sold",
-        false
-      );
-    }
-
-    if (activeStatus === "Available") query = query.eq("is_unavailable", false);
-    if (activeStatus === "Not Available") query = query.eq("is_unavailable", true).eq("is_sold", false);
-
-    if (activeStatus === "Sold") {
-      query = query.eq(
-        "is_sold",
-        true
-      );
-    }
-
-    // Minimum market price
-    if (minPrice.trim() !== "") {
-      query = query.gte(
-        "market_price",
-        Number(minPrice)
-      );
-    }
-
-    // Maximum market price
-    if (maxPrice.trim() !== "") {
-      query = query.lte(
-        "market_price",
-        Number(maxPrice)
-      );
-    }
-
-    const {
-      data,
-      error,
-      count,
-    } = await query
-      .order("created_at", {
-        ascending: false,
-      })
-      .range(from, to);
-
-    if (thisRequest !== requestId.current) return;
-    if (error) {
-      console.error(error);
-
-      setMessage(error.message);
-      setArtworks([]);
-      setTotalCount(0);
-      setLoading(false);
-
-      return;
-    }
-
-    const newTotalCount = count ?? 0;
-
-    /*
-      Example:
-
-      User is on page 5.
-      They apply a filter.
-      Filter result only has 2 pages.
-
-      Prevent page 5 from showing empty.
-    */
-
-    const newTotalPages = Math.max(
-      1,
-      Math.ceil(
-        newTotalCount / ITEMS_PER_PAGE
-      )
-    );
-
-    if (
-      currentPage > newTotalPages &&
-      newTotalCount > 0
-    ) {
-      setCurrentPage(newTotalPages);
-      setLoading(false);
-      return;
-    }
-
-    setArtworks(
-      (data || []) as unknown as Artwork[]
-    );
-
-    setTotalCount(newTotalCount);
-    if (restoreScroll.current) {
+  useEffect(() => {
+    if (!loading && restored && restoreScroll.current) {
       restoreScroll.current = false;
       requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, Number(sessionStorage.getItem("artworkScroll")) || 0)));
     }
-    setLoading(false);
-  }
-
-  /*
-    Query Supabase whenever page or filters change.
-  */
-
-  useEffect(() => {
-    if (restored) loadArtworks();
-  }, [
-    restored,
-    currentPage,
-    activeCategory,
-    activeStatus,
-    minPrice,
-    maxPrice,
-    artistSearchText,
-    artworkSearchText,
-    buyerSearchText,
-  ]);
-
-  /*
-    When any filter changes,
-    return to page 1.
-  */
-
-
-
-  /*
-    Only show a limited group of page buttons.
-
-    Example:
-    1 2 3 4 5
-
-    or when further in:
-    4 5 6 7 8
-  */
+  }, [loading, restored]);
 
   function getVisiblePages() {
     const maxVisible = 10;

@@ -1,5 +1,7 @@
 "use client";
 
+import { normalizeSearch } from "@/lib/search";
+
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -159,17 +161,17 @@ export default function NewArtistPage() {
   }
 
   const filteredArtworks = artworks.filter((artwork) => {
-    const search = artworkSearchText.trim().toLowerCase();
+    const search = normalizeSearch(artworkSearchText);
 
     if (!search) {
       return true;
     }
 
-    const titleEn = artwork.title_en?.toLowerCase() || "";
-    const titleJp = artwork.title_jp?.toLowerCase() || "";
-    const existingArtistName = artwork.artist_name?.toLowerCase() || "";
-    const year = artwork.year?.toLowerCase() || "";
-    const category = artwork.category?.toLowerCase() || "";
+    const titleEn = normalizeSearch(artwork.title_en);
+    const titleJp = normalizeSearch(artwork.title_jp);
+    const existingArtistName = normalizeSearch(artwork.artist_name);
+    const year = normalizeSearch(artwork.year);
+    const category = normalizeSearch(artwork.category);
 
     return (
       titleEn.includes(search) ||

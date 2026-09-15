@@ -1,7 +1,8 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { loadAllRows, matchesSearch } from "@/lib/search";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -17,12 +18,14 @@ type Artist = {
   birth_year: string | null;
 };
 
+type SearchArtwork = { id: number; artist_id: number | null; title_en: string | null; title_jp: string | null; customers: { name: string | null }[] | { name: string | null } | null };
+
 const ITEMS_PER_PAGE = 12;
 
 export default function ArtistsPage() {
-  const supabase = createClient();
 
-  const [artists, setArtists] = useState<Artist[]>([]);
+
+  const [allArtists, setAllArtists] = useState<Artist[]>([]);
 
   const [activeCategory, setActiveCategory] = useState("All");
 
@@ -31,294 +34,43 @@ export default function ArtistsPage() {
   const [buyerSearchText, setBuyerSearchText] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
+  const [searchArtworks, setSearchArtworks] = useState<SearchArtwork[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(totalCount / ITEMS_PER_PAGE)
-  );
-
-  function cleanSearch(text: string) {
-    return text
-      .trim()
-      .replace(/[(),]/g, " ");
-  }
-
-  function intersectIds(
-    first: number[] | null,
-    second: number[]
-  ) {
-    if (first === null) {
-      return Array.from(new Set(second));
-    }
-
-    const secondSet = new Set(second);
-
-    return first.filter((id) =>
-      secondSet.has(id)
-    );
-  }
-
-  async function getArtistIdsFromArtworkSearch() {
-    const search = cleanSearch(
-      artworkSearchText
-    );
-
-    if (!search) {
-      return null;
-    }
-
-    const { data, error } = await supabase
-      .from("artworks")
-      .select("artist_id")
-      .or(
-        `title_en.ilike.%${search}%,title_jp.ilike.%${search}%`
-      )
-      .not("artist_id", "is", null);
-
-    if (error) {
-      throw error;
-    }
-
-    return Array.from(
-      new Set(
-        (data || [])
-          .map((item) => item.artist_id)
-          .filter(
-            (id): id is number =>
-              typeof id === "number"
-          )
-      )
-    );
-  }
-
-  async function getArtistIdsFromBuyerSearch() {
-    const search = buyerSearchText.trim();
-
-    if (!search) {
-      return null;
-    }
-
-    const { data, error } = await supabase
-      .from("artworks")
-      .select(`
-        artist_id,
-        customers!inner (
-          id,
-          name
-        )
-      `)
-      .ilike(
-        "customers.name",
-        `%${search}%`
-      )
-      .not("artist_id", "is", null);
-
-    if (error) {
-      throw error;
-    }
-
-    return Array.from(
-      new Set(
-        (data || [])
-          .map((item) => item.artist_id)
-          .filter(
-            (id): id is number =>
-              typeof id === "number"
-          )
-      )
-    );
-  }
-
-  async function loadArtists() {
-    setLoading(true);
-    setMessage("");
-
-    try {
-      /*
-        First determine whether artwork/client
-        filters restrict which artists are allowed.
-      */
-
-      let allowedArtistIds: number[] | null =
-        null;
-
-      if (artworkSearchText.trim() !== "") {
-        const artworkArtistIds =
-          await getArtistIdsFromArtworkSearch();
-
-        allowedArtistIds = intersectIds(
-          allowedArtistIds,
-          artworkArtistIds || []
-        );
-      }
-
-      if (buyerSearchText.trim() !== "") {
-        const buyerArtistIds =
-          await getArtistIdsFromBuyerSearch();
-
-        allowedArtistIds = intersectIds(
-          allowedArtistIds,
-          buyerArtistIds || []
-        );
-      }
-
-      /*
-        If artwork/client search was active,
-        but no artist matches, stop immediately.
-      */
-
-      if (
-        allowedArtistIds !== null &&
-        allowedArtistIds.length === 0
-      ) {
-        setArtists([]);
-        setTotalCount(0);
-        setLoading(false);
-        return;
-      }
-
-      const from =
-        (currentPage - 1) * ITEMS_PER_PAGE;
-
-      const to =
-        from + ITEMS_PER_PAGE - 1;
-
-      let query = supabase
-        .from("artists")
-        .select(
-          `
-            id,
-            name,
-            name_en,
-            name_jp,
-            artist_photo_url,
-            nationality,
-            birth_year
-          `,
-          {
-            count: "exact",
-          }
-        );
-
-      /*
-        Artist name search
-      */
-
-      if (artistSearchText.trim() !== "") {
-        const search = cleanSearch(
-          artistSearchText
-        );
-
-        query = query.or(
-          `name_en.ilike.%${search}%,name.ilike.%${search}%,name_jp.ilike.%${search}%`
-        );
-      }
-
-      /*
-        Restrict artists based on matching artworks
-        or clients if those searches are active.
-      */
-
-      if (allowedArtistIds !== null) {
-        query = query.in(
-          "id",
-          allowedArtistIds
-        );
-      }
-
-      const {
-        data,
-        error,
-        count,
-      } = await query
-        .order("name_en", {
-          ascending: true,
-          nullsFirst: false,
-        })
-        .range(from, to);
-
-      if (error) {
-        setMessage(error.message);
-        setArtists([]);
-        setTotalCount(0);
-        setLoading(false);
-        return;
-      }
-
-      const newTotalCount = count ?? 0;
-
-      const newTotalPages = Math.max(
-        1,
-        Math.ceil(
-          newTotalCount / ITEMS_PER_PAGE
-        )
-      );
-
-      /*
-        Prevent currentPage from being higher
-        than the number of pages after filtering.
-      */
-
-      if (
-        currentPage > newTotalPages &&
-        newTotalCount > 0
-      ) {
-        setCurrentPage(newTotalPages);
-        setLoading(false);
-        return;
-      }
-
-      setArtists(
-        (data || []) as Artist[]
-      );
-
-      setTotalCount(newTotalCount);
-      setLoading(false);
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to load artists.";
-
-      setMessage(errorMessage);
-      setArtists([]);
-      setTotalCount(0);
-      setLoading(false);
-    }
-  }
-
-  /*
-    Reload current page when page/filter changes.
-  */
-
   useEffect(() => {
-    loadArtists();
-  }, [
-    currentPage,
-    artistSearchText,
-    artworkSearchText,
-    buyerSearchText,
-  ]);
+    let active = true;
+    const client = createClient();
+    Promise.all([
+      loadAllRows<Artist>((from, to) => client.from("artists")
+        .select("id, name, name_en, name_jp, artist_photo_url, nationality, birth_year", { count: "exact" })
+        .order("name_en", { ascending: true, nullsFirst: false }).order("id").range(from, to)),
+      loadAllRows<SearchArtwork>((from, to) => client.from("artworks")
+        .select("id, artist_id, title_en, title_jp, customers(name)", { count: "exact" })
+        .order("id").range(from, to))
+    ]).then(([artists, works]) => { if (active) { setAllArtists(artists); setSearchArtworks(works); } })
+      .catch((error: Error) => { if (active) setMessage(error.message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
-  /*
-    Any search change returns to page 1.
-  */
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [
-    artistSearchText,
-    artworkSearchText,
-    buyerSearchText,
-  ]);
-
-  /*
-    Only show up to 5 page-number buttons.
-  */
+  const filteredArtists = useMemo(() => {
+    const artworkIds = new Set(searchArtworks.filter((work) =>
+      [work.title_en, work.title_jp].some((title) => matchesSearch(title, artworkSearchText))).map((work) => work.artist_id));
+    const buyerIds = new Set(searchArtworks.filter((work) => {
+      const buyers = Array.isArray(work.customers) ? work.customers : work.customers ? [work.customers] : [];
+      return buyers.some((buyer) => matchesSearch(buyer.name, buyerSearchText));
+    }).map((work) => work.artist_id));
+    return allArtists.filter((artist) =>
+      [artist.name, artist.name_en, artist.name_jp].some((name) => matchesSearch(name, artistSearchText))
+      && (!artworkSearchText.trim() || artworkIds.has(artist.id))
+      && (!buyerSearchText.trim() || buyerIds.has(artist.id)));
+  }, [allArtists, searchArtworks, artistSearchText, artworkSearchText, buyerSearchText]);
+  const totalCount = filteredArtists.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
+  const artists = filteredArtists.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  useEffect(() => { setCurrentPage(1); }, [artistSearchText, artworkSearchText, buyerSearchText]);
 
   function getVisiblePages() {
     const maxVisible = 5;

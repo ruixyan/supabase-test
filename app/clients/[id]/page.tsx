@@ -1,5 +1,7 @@
 "use client";
 
+import { normalizeSearch } from "@/lib/search";
+
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import { ClientHighlightFields, ClientHighlightBadges } from "@/app/components/ClientHighlights";
@@ -344,14 +346,14 @@ export default function ClientDetailPage() {
 }
 
   const filteredArtworkOptions = availableArtworks.filter((artwork) => {
-    const search = artworkSearch.trim().toLowerCase();
+    const search = normalizeSearch(artworkSearch);
 
     if (!search) return true;
 
-    const artistName = artwork.artist_name?.toLowerCase() || "";
-    const titleEn = artwork.title_en?.toLowerCase() || "";
-    const titleJp = artwork.title_jp?.toLowerCase() || "";
-    const year = artwork.year?.toLowerCase() || "";
+    const artistName = normalizeSearch(artwork.artist_name);
+    const titleEn = normalizeSearch(artwork.title_en);
+    const titleJp = normalizeSearch(artwork.title_jp);
+    const year = normalizeSearch(artwork.year);
 
     return (
       artistName.includes(search) ||
