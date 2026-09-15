@@ -372,7 +372,7 @@ export default function ArtistsPage() {
           <p>No artists found.</p>
         ) : (
           <>
-            <div className="artworks-grid">
+            <div className="artworks-grid artwork-catalog-grid">
               {artists.map((artist) => {
                 const displayName =
                   artist.name_en ||

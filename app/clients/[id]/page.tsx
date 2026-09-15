@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
+import { ClientHighlightFields, ClientHighlightBadges } from "@/app/components/ClientHighlights";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -13,6 +14,8 @@ type Customer = {
   phone: string | null;
   address: string | null;
   notes: string | null;
+  is_vip: boolean;
+  is_interior_designer: boolean;
 };
 
 type Artwork = {
@@ -61,6 +64,8 @@ export default function ClientDetailPage() {
     phone: "",
     address: "",
     notes: "",
+    is_vip: false,
+    is_interior_designer: false,
   });
 
   async function loadClient() {
@@ -75,7 +80,7 @@ export default function ClientDetailPage() {
 
     const { data: clientData, error: clientError } = await supabase
       .from("customers")
-      .select("id, name, email, phone, address, notes")
+      .select("id, name, email, phone, address, notes, is_vip, is_interior_designer")
       .eq("id", clientId)
       .maybeSingle();
 
@@ -158,6 +163,8 @@ export default function ClientDetailPage() {
       phone: clientData.phone || "",
       address: clientData.address || "",
       notes: clientData.notes || "",
+      is_vip: clientData.is_vip,
+      is_interior_designer: clientData.is_interior_designer,
     });
 
     setLoading(false);
@@ -186,6 +193,8 @@ export default function ClientDetailPage() {
       phone: client.phone || "",
       address: client.address || "",
       notes: client.notes || "",
+      is_vip: client.is_vip,
+      is_interior_designer: client.is_interior_designer,
     });
 
     setSelectedArtworkIds(originalArtworkIds);
@@ -213,6 +222,8 @@ export default function ClientDetailPage() {
         phone: form.phone.trim() || null,
         address: form.address.trim() || null,
         notes: form.notes.trim() || null,
+        is_vip: form.is_vip,
+        is_interior_designer: form.is_interior_designer,
       })
       .eq("id", clientId);
 
@@ -261,6 +272,7 @@ export default function ClientDetailPage() {
         .update({
           buyer_id: clientId,
           is_sold: true,
+          is_unavailable: false,
         })
         .in("id", addedArtworkIds);
 
@@ -420,7 +432,8 @@ export default function ClientDetailPage() {
                 {client.name}
               </h1>
 
-              {client.email && (
+              <ClientHighlightBadges vip={client.is_vip} designer={client.is_interior_designer} />
+{client.email && (
                 <p>
                   <strong>Email:</strong> {client.email}
                 </p>
@@ -483,7 +496,7 @@ export default function ClientDetailPage() {
             marginBottom: "64px",
             padding: "24px",
             border: "1px solid #ddd",
-            background: "#fafafa",
+            background: client.is_vip ? "#fffbeb" : client.is_interior_designer ? "#eff6ff" : "#fafafa",
           }}
         >
           <h1
@@ -563,7 +576,8 @@ export default function ClientDetailPage() {
               />
             </FormField>
 
-            <FormField label="Notes">
+            <ClientHighlightFields vip={form.is_vip} designer={form.is_interior_designer} onChange={(values) => setForm({ ...form, ...values })} />
+<FormField label="Notes">
               <textarea
                 value={form.notes}
                 onChange={(event) =>
@@ -803,6 +817,7 @@ export default function ClientDetailPage() {
               <Link
                 key={artwork.id}
                 href={`/artworks/${artwork.id}`}
+                  onClick={() => { sessionStorage.setItem("artworkReturnTo", window.location.pathname + window.location.search); sessionStorage.setItem("artworkScroll", String(window.scrollY)); }}
                 style={{
                   textDecoration: "none",
                   color: "inherit",

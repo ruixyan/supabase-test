@@ -18,6 +18,7 @@ type Artist = {
   selected_exhibitions: string | null;
   selected_public_collections: string | null;
   contact_info: string | null;
+  additional_materials?: string | null;
 };
 
 type Artwork = {
@@ -32,6 +33,7 @@ type Artwork = {
   dimensions: string | null;
   category: string | null;
   is_sold: boolean;
+  is_unavailable: boolean;
 };
 
 const inputStyle = {
@@ -71,6 +73,7 @@ export default function ArtistDetailPage() {
     selected_exhibitions: "",
     selected_public_collections: "",
     contact_info: "",
+    additional_materials: "",
   });
 
   async function loadArtistAndWorks() {
@@ -83,19 +86,8 @@ export default function ArtistDetailPage() {
 
     const { data: artistData, error: artistError } = await supabase
       .from("artists")
-      .select(`
-        id,
-        name,
-        name_en,
-        name_jp,
-        artist_photo_url,
-        bio,
-        nationality,
-        birth_year,
-        selected_exhibitions,
-        selected_public_collections,
-        contact_info
-      `)
+      // Keep existing profiles readable before the optional-field migration runs.
+      .select("*")
       .eq("id", id)
       .maybeSingle();
 
@@ -122,6 +114,7 @@ export default function ArtistDetailPage() {
         material,
         dimensions,
         category,
+        is_unavailable,
         is_sold
       `)
       .eq("artist_id", id)
@@ -145,6 +138,7 @@ export default function ArtistDetailPage() {
         material,
         dimensions,
         category,
+        is_unavailable,
         is_sold
       `)
       .or(`artist_id.is.null,artist_id.eq.${id}`)
@@ -177,6 +171,7 @@ export default function ArtistDetailPage() {
       selected_public_collections:
         artistData.selected_public_collections || "",
       contact_info: artistData.contact_info || "",
+      additional_materials: artistData.additional_materials || "",
     });
 
     setMessage("");
@@ -211,6 +206,7 @@ export default function ArtistDetailPage() {
       selected_public_collections:
         artist.selected_public_collections || "",
       contact_info: artist.contact_info || "",
+      additional_materials: artist.additional_materials || "",
     });
 
     setSelectedArtworkIds(originalArtworkIds);
@@ -253,6 +249,9 @@ export default function ArtistDetailPage() {
         selected_public_collections:
           form.selected_public_collections.trim() || null,
         contact_info: form.contact_info.trim() || null,
+        ...(form.additional_materials.trim() || (artist && "additional_materials" in artist)
+          ? { additional_materials: form.additional_materials.trim() || null }
+          : {}),
       })
       .eq("id", id);
 
@@ -565,6 +564,15 @@ export default function ArtistDetailPage() {
                 </div>
               )}
 
+              {artist.additional_materials && (
+                <div style={{ marginTop: "28px" }}>
+                  <h3 style={{ fontWeight: 600 }}>Additional Materials</h3>
+                  <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", lineHeight: 1.6 }}>
+                    {artist.additional_materials}
+                  </p>
+                </div>
+              )}
+
               {message && (
                 <p
                   style={{
@@ -752,6 +760,16 @@ export default function ArtistDetailPage() {
                   minHeight: "100px",
                   resize: "vertical",
                 }}
+              />
+            </FormField>
+
+            <FormField label="Additional Materials">
+              <textarea
+                aria-label="Additional Materials"
+                value={form.additional_materials}
+                onChange={(event) => setForm({ ...form, additional_materials: event.target.value })}
+                placeholder="Add notes or links to additional materials"
+                style={{ ...inputStyle, minHeight: "120px", resize: "vertical" }}
               />
             </FormField>
 
@@ -1006,6 +1024,7 @@ export default function ArtistDetailPage() {
               <Link
                 key={artwork.id}
                 href={`/artworks/${artwork.id}`}
+                  onClick={() => { sessionStorage.setItem("artworkReturnTo", window.location.pathname + window.location.search); sessionStorage.setItem("artworkScroll", String(window.scrollY)); }}
                 style={{
                   textDecoration: "none",
                   color: "inherit",
@@ -1101,7 +1120,7 @@ export default function ArtistDetailPage() {
                       : "#444",
                   }}
                 >
-                  {artwork.is_sold ? "Sold" : "Available"}
+                  {artwork.is_sold ? "Sold" : artwork.is_unavailable ? "Not Available" : "Available"}
                 </span>
               </Link>
             ))}

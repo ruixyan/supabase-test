@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import Link from "next/link";
+import BackToArtworks from "@/app/components/BackToArtworks";
 import { useRouter } from "next/navigation";
 import {
   useEffect,
@@ -11,6 +11,9 @@ import {
   type RefObject,
 } from "react";
 import ReactMarkdown from "react-markdown";
+import ClientSelect from "@/app/components/ClientSelect";
+import ArtworkStatus from "@/app/components/ArtworkStatus";
+import { syncRetailPrice } from "@/lib/artwork-copy";
 import ImageUploadField from "@/app/components/ImageUploadField";
 
 type ArtistOption = {
@@ -58,7 +61,6 @@ export default function NewArtworkPage() {
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState("");
-  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
 
   const [form, setForm] = useState({
     artist_id: "",
@@ -71,6 +73,8 @@ export default function NewArtworkPage() {
     category: "Metalwork",
     market_price: "",
     cost: "",
+    note: "",
+    is_unavailable: false,
     extra_photo_link: "",
     fact_sheet_link: "",
     copy_info: "",
@@ -263,29 +267,7 @@ Cost: ${cost}`;
     setTimeout(() => setCopied(false), 1500);
   }
 
-  let artworkPhotoUrl = form.artwork_photo_url.trim() || null;
-  
   async function addArtwork(event: React.FormEvent<HTMLFormElement>) {
-    if (uploadedImage) {
-  const fileExt = uploadedImage.name.split(".").pop();
-  const fileName = `${Date.now()}.${fileExt}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from("artworks")
-    .upload(fileName, uploadedImage);
-
-  if (uploadError) {
-    setMessage(uploadError.message);
-    setSubmitting(false);
-    return;
-  }
-
-  const { data } = supabase.storage
-    .from("artworks")
-    .getPublicUrl(fileName);
-
-  artworkPhotoUrl = data.publicUrl;
-}
     event.preventDefault();
 
     if (!form.artist_id) {
@@ -298,10 +280,6 @@ Cost: ${cost}`;
       return;
     }
 
-    if (form.is_sold && !form.buyer_id) {
-      setMessage("Please select a client for a sold artwork.");
-      return;
-    }
 
     if (!selectedArtist) {
       setMessage("The selected artist could not be found.");
@@ -345,9 +323,12 @@ Cost: ${cost}`;
 
           extra_photo_link: form.extra_photo_link.trim() || null,
           fact_sheet_link: form.fact_sheet_link.trim() || null,
-          copy_info: form.copy_info.trim() || null,
+          copy_info: syncRetailPrice(form.copy_info, form.market_price) || null,
+          note: form.note.trim() || null,
+          is_unavailable: form.is_unavailable,
 
           is_sold: form.is_sold,
+          is_unique: form.is_unique,
           buyer_id:
             form.is_sold && form.buyer_id
               ? Number(form.buyer_id)
@@ -382,18 +363,7 @@ Cost: ${cost}`;
         padding: "24px 36px",
       }}
     >
-      <Link
-        href="/artworks"
-        style={{
-          display: "inline-block",
-          color: "black",
-          textDecoration: "none",
-          fontSize: "14px",
-          marginBottom: "32px",
-        }}
-      >
-        ← Back to artworks
-      </Link>
+      <BackToArtworks />
 
       <h1
         style={{
@@ -592,6 +562,15 @@ Cost: ${cost}`;
               style={inputStyle}
             />
           </FormField>
+          <FormField label="Note">
+            <textarea
+              aria-label="Note"
+              value={form.note}
+              onChange={(event) => setForm({ ...form, note: event.target.value })}
+              style={{ ...inputStyle, minHeight: "90px", resize: "vertical" }}
+            />
+          </FormField>
+
 
           <FormField label="Additional Photos Folder Link">
             <input
@@ -829,94 +808,12 @@ Cost: ${cost}`;
   </div>
 </div>
 
-<div>
-  <label
-    style={{
-      display: "block",
-      marginBottom: "8px",
-      fontSize: "13px",
-      fontWeight: 600,
-    }}
-  >
-    Status
-  </label>
-
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: "8px",
-    }}
-  >
-    <button
-      type="button"
-      onClick={() =>
-        setForm({
-          ...form,
-          is_sold: false,
-          buyer_id: "",
-        })
-      }
-      style={{
-        padding: "10px 12px",
-        border: "1px solid #bdbdbd",
-        background: !form.is_sold ? "#9c1515" : "white",
-        color: !form.is_sold ? "white" : "black",
-        cursor: "pointer",
-        fontSize: "13px",
-      }}
-    >
-      Available
-    </button>
-
-    <button
-      type="button"
-      onClick={() =>
-        setForm({
-          ...form,
-          is_sold: true,
-        })
-      }
-      style={{
-        padding: "10px 12px",
-        border: "1px solid #bdbdbd",
-        background: form.is_sold ? "#9c1515" : "white",
-        color: form.is_sold ? "white" : "black",
-        cursor: "pointer",
-        fontSize: "13px",
-      }}
-    >
-      Sold
-    </button>
-  </div>
-</div>
-
-{form.is_sold && (
-  <FormField label="Client">
-    <select
-      value={form.buyer_id}
-      onChange={(event) =>
-        setForm({
-          ...form,
-          buyer_id: event.target.value,
-        })
-      }
-      style={{
-        ...inputStyle,
-        background: "white",
-      }}
-      required
-    >
-      <option value="">Select a client</option>
-
-      {clients.map((client) => (
-        <option key={client.id} value={client.id}>
-          {client.name}
-        </option>
-      ))}
-    </select>
-  </FormField>
-)}
+<ArtworkStatus sold={form.is_sold} unavailable={form.is_unavailable}
+    onChange={(is_sold, is_unavailable) => setForm({ ...form, is_sold, is_unavailable, buyer_id: is_sold ? form.buyer_id : "" })} />
+  {form.is_sold && <FormField label="Client (optional)">
+    <ClientSelect clients={clients} value={form.buyer_id}
+      onChange={(buyer_id) => setForm({ ...form, buyer_id })} />
+  </FormField>}
 
           <button
             type="submit"

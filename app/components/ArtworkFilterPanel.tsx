@@ -202,7 +202,7 @@ export default function ArtworkFilterPanel({
             gap: "8px",
           }}
         >
-          {["Available", "Sold"].map((status) => {
+          {["Available", "Sold", "Not Available"].map((status) => {
             const isActive =
               activeStatus === status;
 

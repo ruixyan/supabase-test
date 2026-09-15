@@ -39,6 +39,7 @@ export default function NewArtistPage() {
     selected_exhibitions: "",
     selected_public_collections: "",
     contact_info: "",
+    additional_materials: "",
   });
 
   const [artworks, setArtworks] = useState<ArtworkOption[]>([]);
@@ -120,6 +121,9 @@ export default function NewArtistPage() {
           selected_public_collections:
             form.selected_public_collections.trim() || null,
           contact_info: form.contact_info.trim() || null,
+          ...(form.additional_materials.trim()
+            ? { additional_materials: form.additional_materials.trim() }
+            : {}),
         },
       ])
       .select("id")
@@ -365,6 +369,16 @@ export default function NewArtistPage() {
               minHeight: "100px",
               resize: "vertical",
             }}
+          />
+        </FormField>
+
+        <FormField label="Additional Materials">
+          <textarea
+            aria-label="Additional Materials"
+            value={form.additional_materials}
+            onChange={(event) => setForm({ ...form, additional_materials: event.target.value })}
+            placeholder="Add notes or links to additional materials"
+            style={{ ...inputStyle, minHeight: "120px", resize: "vertical" }}
           />
         </FormField>
 

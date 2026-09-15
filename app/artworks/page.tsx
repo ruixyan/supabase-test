@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import ArtworkFilterPanel from "@/app/components/ArtworkFilterPanel";
@@ -32,6 +32,7 @@ type Artwork = {
   category: string | null;
   is_unique: boolean;
   is_sold: boolean;
+  is_unavailable: boolean;
   created_at: string;
   customers: Customer;
 };
@@ -41,6 +42,9 @@ const ITEMS_PER_PAGE = 12;
 export default function ArtworksPage() {
   const supabase = createClient();
 
+  const [restored, setRestored] = useState(false);
+  const restoreScroll = useRef(true);
+  const requestId = useRef(0);
   const [artworks, setArtworks] = useState<Artwork[]>([]);
 
   const [activeCategory, setActiveCategory] = useState("All");
@@ -64,7 +68,29 @@ export default function ArtworksPage() {
     Math.ceil(totalCount / ITEMS_PER_PAGE)
   );
 
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem("artworkListState") || "null");
+      if (saved) {
+        if (typeof saved.activeCategory === "string") setActiveCategory(saved.activeCategory);
+        if (typeof saved.activeStatus === "string") setActiveStatus(saved.activeStatus);
+        if (typeof saved.minPrice === "string") setMinPrice(saved.minPrice);
+        if (typeof saved.maxPrice === "string") setMaxPrice(saved.maxPrice);
+        if (typeof saved.artistSearchText === "string") setArtistSearchText(saved.artistSearchText);
+        if (typeof saved.artworkSearchText === "string") setArtworkSearchText(saved.artworkSearchText);
+        if (typeof saved.buyerSearchText === "string") setBuyerSearchText(saved.buyerSearchText);
+        if (Number.isInteger(saved.currentPage) && saved.currentPage > 0) setCurrentPage(saved.currentPage);
+      }
+    } catch { /* Ignore obsolete saved filters. */ }
+    setRestored(true);
+  }, []);
+
+  useEffect(() => {
+    if (restored) sessionStorage.setItem("artworkListState", JSON.stringify({ activeCategory, activeStatus, minPrice, maxPrice, artistSearchText, artworkSearchText, buyerSearchText, currentPage }));
+  }, [restored, activeCategory, activeStatus, minPrice, maxPrice, artistSearchText, artworkSearchText, buyerSearchText, currentPage]);
+
   async function loadArtworks() {
+    const thisRequest = ++requestId.current;
     setLoading(true);
     setMessage("");
 
@@ -115,6 +141,7 @@ export default function ArtworksPage() {
           category,
           is_unique,
           is_sold,
+          is_unavailable,
           created_at,
           ${customerSelect}
         `,
@@ -166,6 +193,9 @@ export default function ArtworksPage() {
       );
     }
 
+    if (activeStatus === "Available") query = query.eq("is_unavailable", false);
+    if (activeStatus === "Not Available") query = query.eq("is_unavailable", true).eq("is_sold", false);
+
     if (activeStatus === "Sold") {
       query = query.eq(
         "is_sold",
@@ -199,6 +229,7 @@ export default function ArtworksPage() {
       })
       .range(from, to);
 
+    if (thisRequest !== requestId.current) return;
     if (error) {
       console.error(error);
 
@@ -243,6 +274,10 @@ export default function ArtworksPage() {
     );
 
     setTotalCount(newTotalCount);
+    if (restoreScroll.current) {
+      restoreScroll.current = false;
+      requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, Number(sessionStorage.getItem("artworkScroll")) || 0)));
+    }
     setLoading(false);
   }
 
@@ -251,8 +286,9 @@ export default function ArtworksPage() {
   */
 
   useEffect(() => {
-    loadArtworks();
+    if (restored) loadArtworks();
   }, [
+    restored,
     currentPage,
     activeCategory,
     activeStatus,
@@ -268,17 +304,7 @@ export default function ArtworksPage() {
     return to page 1.
   */
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [
-    activeCategory,
-    activeStatus,
-    minPrice,
-    maxPrice,
-    artistSearchText,
-    artworkSearchText,
-    buyerSearchText,
-  ]);
+
 
   /*
     Only show a limited group of page buttons.
@@ -291,7 +317,7 @@ export default function ArtworksPage() {
   */
 
   function getVisiblePages() {
-    const maxVisible = 5;
+    const maxVisible = 10;
 
     if (totalPages <= maxVisible) {
       return Array.from(
@@ -302,7 +328,7 @@ export default function ArtworksPage() {
 
     let start = Math.max(
       1,
-      currentPage - 2
+      currentPage - 4
     );
 
     let end = start + maxVisible - 1;
@@ -350,11 +376,12 @@ export default function ArtworksPage() {
           </p>
         ) : (
           <>
-            <div className="artworks-grid">
+            <div className="artworks-grid artwork-catalog-grid">
               {artworks.map((artwork) => (
                 <Link
                   key={artwork.id}
                   href={`/artworks/${artwork.id}`}
+                  onClick={() => { sessionStorage.setItem("artworkReturnTo", window.location.pathname + window.location.search); sessionStorage.setItem("artworkScroll", String(window.scrollY)); }}
                   style={{
                     textDecoration: "none",
                     color: "inherit",
@@ -390,19 +417,9 @@ export default function ArtworksPage() {
 
                   <h2
                     style={{
-                      margin: "0 0 4px 0",
-                      fontSize: "18px",
-                      fontWeight: 700,
-                      lineHeight: 1.3,
-                    }}
-                  >
-                    {artwork.artist_name}
-                  </h2>
-
-                  <p
-                    style={{
                       margin: 0,
                       fontSize: "15px",
+                      fontWeight: 700,
                       lineHeight: 1.4,
                     }}
                   >
@@ -417,7 +434,7 @@ export default function ArtworksPage() {
                         artwork.title_jp ||
                         "Untitled"}
                     </ReactMarkdown>
-                  </p>
+                  </h2>
 
                   {artwork.title_en &&
                     artwork.title_jp && (
@@ -444,6 +461,10 @@ export default function ArtworksPage() {
                         </ReactMarkdown>
                       </p>
                     )}
+
+                  <p style={{ margin: "4px 0 0", fontSize: "14px", lineHeight: 1.4 }}>
+                    {artwork.artist_name}
+                  </p>
 
                   {artwork.year && (
                     <p
@@ -515,7 +536,7 @@ export default function ArtworksPage() {
                     >
                       {artwork.is_sold
                         ? "Sold"
-                        : "Available"}
+                        : artwork.is_unavailable ? "Not Available" : "Available"}
                     </span>
                   </div>
                 </Link>
@@ -670,37 +691,27 @@ export default function ArtworksPage() {
         artistSearchText={
           artistSearchText
         }
-        setArtistSearchText={
-          setArtistSearchText
-        }
+        setArtistSearchText={(value) => { setArtistSearchText(value); setCurrentPage(1); }}
         artworkSearchText={
           artworkSearchText
         }
-        setArtworkSearchText={
-          setArtworkSearchText
-        }
+        setArtworkSearchText={(value) => { setArtworkSearchText(value); setCurrentPage(1); }}
         buyerSearchText={
           buyerSearchText
         }
-        setBuyerSearchText={
-          setBuyerSearchText
-        }
+        setBuyerSearchText={(value) => { setBuyerSearchText(value); setCurrentPage(1); }}
         activeCategory={
           activeCategory
         }
-        setActiveCategory={
-          setActiveCategory
-        }
+        setActiveCategory={(value) => { setActiveCategory(value); setCurrentPage(1); }}
         activeStatus={
           activeStatus
         }
-        setActiveStatus={
-          setActiveStatus
-        }
+        setActiveStatus={(value) => { setActiveStatus(value); setCurrentPage(1); }}
         minPrice={minPrice}
-        setMinPrice={setMinPrice}
+        setMinPrice={(value) => { setMinPrice(value); setCurrentPage(1); }}
         maxPrice={maxPrice}
-        setMaxPrice={setMaxPrice}
+        setMaxPrice={(value) => { setMaxPrice(value); setCurrentPage(1); }}
       />
     </div>
   );

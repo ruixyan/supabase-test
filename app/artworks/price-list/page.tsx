@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import PriceListPrint from "@/app/components/PriceListPrint";
 
 type Artwork = {
   id: number;
@@ -30,6 +31,8 @@ export default function PriceListPage() {
 
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+
+  const [priceListHeading, setPriceListHeading] = useState("Onishi Gallery");
 
   const [priceListTitle, setPriceListTitle] =
     useState("Price List");
@@ -202,7 +205,7 @@ export default function PriceListPage() {
   }, [currentPage, totalPages]);
 
   function getVisiblePages() {
-    const maxVisible = 5;
+    const maxVisible = 10;
 
     if (totalPages <= maxVisible) {
       return Array.from(
@@ -213,7 +216,7 @@ export default function PriceListPage() {
 
     let start = Math.max(
       1,
-      currentPage - 2
+      currentPage - 4
     );
 
     let end =
@@ -239,13 +242,7 @@ export default function PriceListPage() {
 
   if (showPreview) {
     return (
-      <main
-        style={{
-          maxWidth: "1100px",
-          margin: "0 auto",
-          padding: "48px 72px",
-        }}
-      >
+      <main className="price-list-preview-main">
         <div
           className="price-list-controls"
           style={{
@@ -312,245 +309,11 @@ export default function PriceListPage() {
           </div>
         </div>
 
-        <section
-          className="price-list-preview"
-          style={{
-            background: "white",
-            border:
-              "1px solid #ddd",
-            padding: "48px",
-          }}
-        >
-          <header
-            style={{
-              marginBottom: "40px",
-            }}
-          >
-            <h1
-              style={{
-                margin:
-                  "0 0 8px 0",
-                fontSize: "28px",
-                fontWeight: 600,
-              }}
-            >
-              Onishi Gallery
-            </h1>
-
-            <p
-              style={{
-                margin: 0,
-                fontSize: "16px",
-              }}
-            >
-              {priceListTitle.trim() ||
-                "Price List"}
-            </p>
-          </header>
-
-          {sortedCategories.map(
-            (category) => (
-              <section
-                key={category}
-                style={{
-                  marginBottom:
-                    "40px",
-                }}
-              >
-                <h2
-                  style={{
-                    margin:
-                      "0 0 22px 0",
-                    paddingBottom:
-                      "8px",
-                    borderBottom:
-                      "1px solid #bbb",
-                    fontSize:
-                      "18px",
-                    fontWeight: 600,
-                  }}
-                >
-                  {category}
-                </h2>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns:
-                      "1fr 1fr",
-                    columnGap:
-                      "32px",
-                    rowGap: "20px",
-                  }}
-                >
-                  {groupedArtworks[
-                    category
-                  ].map(
-                    (artwork) => {
-                      const title =
-                        artwork.title_en ||
-                        artwork.title_jp ||
-                        "Untitled";
-
-                      return (
-                        <article
-                          key={
-                            artwork.id
-                          }
-                          style={{
-                            display:
-                              "grid",
-                            gridTemplateColumns:
-                              "90px 1fr",
-                            gap: "14px",
-                            alignItems:
-                              "start",
-                            breakInside:
-                              "avoid",
-                            pageBreakInside:
-                              "avoid",
-                          }}
-                        >
-                          <div
-                            style={{
-                              position:
-                                "relative",
-                              width:
-                                "90px",
-                              height:
-                                "90px",
-                              background:
-                                "#f5f5f5",
-                              overflow:
-                                "hidden",
-                            }}
-                          >
-                            {artwork.artwork_photo_url && (
-                              <Image
-                                src={
-                                  artwork.artwork_photo_url
-                                }
-                                alt={
-                                  title
-                                }
-                                fill
-                                style={{
-                                  objectFit:
-                                    "contain",
-                                }}
-                              />
-                            )}
-                          </div>
-
-                          <div
-                            style={{
-                              minWidth: 0,
-                              display:
-                                "flex",
-                              flexDirection:
-                                "column",
-                              minHeight:
-                                "90px",
-                            }}
-                          >
-                            <p
-                              style={{
-                                margin:
-                                  "0 0 2px 0",
-                                fontSize:
-                                  "12px",
-                                fontWeight:
-                                  700,
-                                lineHeight:
-                                  1.3,
-                              }}
-                            >
-                              {artwork.artist_name ||
-                                "Unknown Artist"}
-                            </p>
-
-                            <p
-                              style={{
-                                margin:
-                                  "0 0 2px 0",
-                                fontSize:
-                                  "12px",
-                                fontStyle:
-                                  "italic",
-                                lineHeight:
-                                  1.3,
-                              }}
-                            >
-                              {title}
-                              {artwork.year
-                                ? `, ${artwork.year}`
-                                : ""}
-                            </p>
-
-                            {artwork.material && (
-                              <p
-                                style={{
-                                  margin:
-                                    "0 0 2px 0",
-                                  fontSize:
-                                    "11px",
-                                  lineHeight:
-                                    1.3,
-                                }}
-                              >
-                                {
-                                  artwork.material
-                                }
-                              </p>
-                            )}
-
-                            {artwork.dimensions && (
-                              <p
-                                style={{
-                                  margin:
-                                    0,
-                                  fontSize:
-                                    "11px",
-                                  lineHeight:
-                                    1.3,
-                                }}
-                              >
-                                {
-                                  artwork.dimensions
-                                }
-                              </p>
-                            )}
-
-                            {artwork.market_price !==
-                              null && (
-                              <p
-                                style={{
-                                  margin:
-                                    "auto 0 0 0",
-                                  paddingTop:
-                                    "6px",
-                                  textAlign:
-                                    "right",
-                                  fontSize:
-                                    "12px",
-                                  fontWeight:
-                                    600,
-                                }}
-                              >
-                                $
-                                {artwork.market_price.toLocaleString()}
-                              </p>
-                            )}
-                          </div>
-                        </article>
-                      );
-                    }
-                  )}
-                </div>
-              </section>
-            )
-          )}
-        </section>
+        <PriceListPrint
+          artworks={sortedCategories.flatMap((category) => groupedArtworks[category])}
+          heading={priceListHeading}
+          subtitle={priceListTitle}
+        />
       </main>
     );
   }
@@ -601,6 +364,16 @@ export default function PriceListPage() {
         </p>
       </div>
 
+      <div style={{ marginBottom: "16px" }}>
+        <label htmlFor="price-list-heading" style={{ display: "block", marginBottom: "6px", fontSize: "13px", fontWeight: 600 }}>
+          Heading 1
+        </label>
+        <input id="price-list-heading" type="text" value={priceListHeading}
+          onChange={(event) => setPriceListHeading(event.target.value)}
+          placeholder="Onishi Gallery"
+          style={{ width: "100%", padding: "10px 12px", border: "1px solid #bdbdbd", fontSize: "14px" }} />
+      </div>
+
       <div
         style={{
           marginBottom: "20px",
@@ -614,11 +387,12 @@ export default function PriceListPage() {
             fontWeight: 600,
           }}
         >
-          Price List Title
+          Heading 2
         </label>
 
         <input
           type="text"
+          aria-label="Heading line 2"
           value={priceListTitle}
           onChange={(event) =>
             setPriceListTitle(

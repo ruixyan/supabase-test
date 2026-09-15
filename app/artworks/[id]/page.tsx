@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
+import BackToArtworks from "@/app/components/BackToArtworks";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -11,7 +12,9 @@ import {
   type ReactNode,
 } from "react";
 import ReactMarkdown from "react-markdown";
-import remarkBreaks from "remark-breaks";
+import ClientSelect from "@/app/components/ClientSelect";
+import ArtworkStatus from "@/app/components/ArtworkStatus";
+import { syncRetailPrice } from "@/lib/artwork-copy";
 import ImageUploadField from "@/app/components/ImageUploadField";
 
 type Artist = {
@@ -47,6 +50,8 @@ type Artwork = {
   buyer_id: number | null;
   market_price: number | null;
   cost: number | null;
+  note: string | null;
+  is_unavailable: boolean;
   artists: Artist[] | Artist | null;
   customers: Customer[] | Customer | null;
 };
@@ -86,7 +91,6 @@ export default function ArtworkDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
 
   const [form, setForm] = useState({
     artist_id: "",
@@ -99,6 +103,8 @@ export default function ArtworkDetailPage() {
     category: "",
     market_price: "",
     cost: "",
+    note: "",
+    is_unavailable: false,
     extra_photo_link: "",
     fact_sheet_link: "",
     copy_info: "",
@@ -137,6 +143,8 @@ export default function ArtworkDetailPage() {
         buyer_id,
         market_price,
         cost,
+        note,
+        is_unavailable,
         artists (
           id,
           name,
@@ -176,6 +184,8 @@ export default function ArtworkDetailPage() {
   market_price:
     data.market_price !== null ? String(data.market_price) : "",
   cost: data.cost !== null ? String(data.cost) : "",
+  note: data.note || "",
+  is_unavailable: data.is_unavailable,
   extra_photo_link: data.extra_photo_link || "",
   fact_sheet_link: data.fact_sheet_link || "",
   copy_info: data.copy_info || "",
@@ -241,15 +251,7 @@ export default function ArtworkDetailPage() {
       <main style={{ padding: "48px 72px" }}>
         <p>{message || "Artwork not found."}</p>
 
-        <Link
-          href="/artworks"
-          style={{
-            color: "black",
-            textDecoration: "none",
-          }}
-        >
-          ← Back to artworks
-        </Link>
+        <BackToArtworks />
       </main>
     );
   }
@@ -469,6 +471,8 @@ function cancelEditing() {
       artwork.cost !== null
         ? String(artwork.cost)
         : "",
+    note: artwork.note || "",
+    is_unavailable: artwork.is_unavailable,
     extra_photo_link: artwork.extra_photo_link || "",
     fact_sheet_link: artwork.fact_sheet_link || "",
     copy_info: artwork.copy_info || "",
@@ -545,10 +549,6 @@ async function deleteArtwork() {
       return;
     }
 
-    if (form.is_sold && !form.buyer_id) {
-      setMessage("Please select a client for a sold artwork.");
-      return;
-    }
 
     const selectedArtist = artistOptions.find(
       (option) => option.id === Number(form.artist_id)
@@ -596,7 +596,9 @@ async function deleteArtwork() {
 
     extra_photo_link: form.extra_photo_link.trim() || null,
     fact_sheet_link: form.fact_sheet_link.trim() || null,
-    copy_info: form.copy_info.trim() || null,
+    copy_info: syncRetailPrice(form.copy_info, form.market_price) || null,
+    note: form.note.trim() || null,
+    is_unavailable: form.is_unavailable,
 
     is_unique: form.is_unique,
     is_sold: form.is_sold,
@@ -632,15 +634,7 @@ async function deleteArtwork() {
 
     <main className="artwork-detail-main">
 
-      <Link
-        href="/artworks"
-        style={{
-          color: "black",
-          textDecoration: "none",
-        }}
-      >
-        ← Back to artworks
-      </Link>
+      <BackToArtworks />
 
       {!isEditing ? (
         <>
@@ -786,6 +780,7 @@ async function deleteArtwork() {
                   <strong>Cost:</strong> {costText}
                 </p>
               )}
+              <p style={{ whiteSpace: "pre-wrap" }}><strong>Note:</strong> {artwork.note || "—"}</p>
 
               <div
   style={{
@@ -815,11 +810,11 @@ async function deleteArtwork() {
       fontSize: "14px",
     }}
   >
-    {artwork.is_sold ? "Sold" : "Available"}
+    {artwork.is_sold ? "Sold" : artwork.is_unavailable ? "Not Available" : "Available"}
   </span>
 </div>
 
-              <div style={{ marginTop: "24px" }}>
+<div style={{ marginTop: "24px" }}>
                 {artwork.extra_photo_link && (
                   <p
                     style={{
@@ -1104,6 +1099,15 @@ async function deleteArtwork() {
                 style={inputStyle}
               />
             </FormField>
+            <FormField label="Note">
+              <textarea
+                aria-label="Note"
+                value={form.note}
+                onChange={(event) => setForm({ ...form, note: event.target.value })}
+                style={{ ...inputStyle, minHeight: "90px", resize: "vertical" }}
+              />
+            </FormField>
+
 
             <FormField label="Additional Photos Folder Link">
               <input
@@ -1323,105 +1327,12 @@ async function deleteArtwork() {
     })}
   </div>
 </div>
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "8px",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                }}
-              >
-                Status
-              </label>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "8px",
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() =>
-                    setForm({
-                      ...form,
-                      is_sold: false,
-                      buyer_id: "",
-                    })
-                  }
-                  style={{
-                    padding: "10px 12px",
-                    border: "1px solid #bdbdbd",
-                    background: !form.is_sold
-                      ? "#9c1515"
-                      : "white",
-                    color: !form.is_sold
-                      ? "white"
-                      : "black",
-                    cursor: "pointer",
-                  }}
-                >
-                  Available
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setForm({
-                      ...form,
-                      is_sold: true,
-                    })
-                  }
-                  style={{
-                    padding: "10px 12px",
-                    border: "1px solid #bdbdbd",
-                    background: form.is_sold
-                      ? "#9c1515"
-                      : "white",
-                    color: form.is_sold
-                      ? "white"
-                      : "black",
-                    cursor: "pointer",
-                  }}
-                >
-                  Sold
-                </button>
-              </div>
-            </div>
-
-            {form.is_sold && (
-              <FormField label="Client">
-                <select
-                  value={form.buyer_id}
-                  onChange={(event) =>
-                    setForm({
-                      ...form,
-                      buyer_id: event.target.value,
-                    })
-                  }
-                  style={{
-                    ...inputStyle,
-                    background: "white",
-                  }}
-                  required
-                >
-                  <option value="">
-                    Select a client
-                  </option>
-
-                  {clientOptions.map((option) => (
-                    <option
-                      key={option.id}
-                      value={option.id}
-                    >
-                      {option.name}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
-            )}
+            <ArtworkStatus sold={form.is_sold} unavailable={form.is_unavailable}
+    onChange={(is_sold, is_unavailable) => setForm({ ...form, is_sold, is_unavailable, buyer_id: is_sold ? form.buyer_id : "" })} />
+  {form.is_sold && <FormField label="Client (optional)">
+    <ClientSelect clients={clientOptions} value={form.buyer_id}
+      onChange={(buyer_id) => setForm({ ...form, buyer_id })} />
+  </FormField>}
 
 <div
   style={{

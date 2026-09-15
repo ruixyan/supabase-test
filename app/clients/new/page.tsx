@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { ClientHighlightFields } from "@/app/components/ClientHighlights";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -34,6 +35,8 @@ export default function NewClientPage() {
     phone: "",
     address: "",
     notes: "",
+    is_vip: false,
+    is_interior_designer: false,
   });
 
   const [artworks, setArtworks] = useState<ArtworkOption[]>([]);
@@ -102,6 +105,8 @@ export default function NewClientPage() {
           phone: form.phone.trim() || null,
           address: form.address.trim() || null,
           notes: form.notes.trim() || null,
+          is_vip: form.is_vip,
+          is_interior_designer: form.is_interior_designer,
         },
       ])
       .select("id")
@@ -119,6 +124,7 @@ export default function NewClientPage() {
         .update({
           buyer_id: newClient.id,
           is_sold: true,
+          is_unavailable: false,
         })
         .in("id", selectedArtworkIds);
 
@@ -131,7 +137,7 @@ export default function NewClientPage() {
       }
     }
 
-    router.push(`/customers/${newClient.id}`);
+    router.push(`/clients/${newClient.id}`);
     router.refresh();
   }
 
@@ -240,6 +246,7 @@ export default function NewClientPage() {
           />
         </FormField>
 
+        <ClientHighlightFields vip={form.is_vip} designer={form.is_interior_designer} onChange={(values) => setForm({ ...form, ...values })} />
         <FormField label="Notes">
           <textarea
             value={form.notes}

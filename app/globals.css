@@ -80,6 +80,7 @@
   .sidebar {
     position: static;
     width: 100%;
+    min-height: 0;
   }
 }
 
@@ -107,9 +108,19 @@
 }
 
 @media (max-width: 768px) {
-  .artworks-layout {
-    grid-template-columns: 1fr;
+  .artworks-layout, .artists-layout {
+    grid-template-columns: minmax(0, 1fr);
     padding: 24px 16px;
+    gap: 24px;
+  }
+
+  .artworks-layout > .sidebar, .artists-layout > .sidebar {
+    grid-row: 1;
+  }
+
+  .artworks-layout > main, .artists-layout > main {
+    grid-row: 2;
+    min-width: 0;
   }
 }
 
@@ -124,7 +135,13 @@
 
 @media (max-width: 768px) {
   .artworks-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 12px;
+  }
+
+  .artworks-grid > a {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -236,5 +253,21 @@
   @page {
     size: Letter;
     margin: 0.5in;
+  }
+}
+
+.artwork-catalog-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 40px 24px;
+}
+
+@media (max-width: 1200px) {
+  .artwork-catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 768px) {
+  .artwork-catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 12px;
   }
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { ClientHighlightBadges } from "@/app/components/ClientHighlights";
 import Link from "next/link";
 import ArtworkFilterPanel from "@/app/components/ArtworkFilterPanel";
 
@@ -21,14 +22,19 @@ type Client = {
   phone: string | null;
   address: string | null;
   notes: string | null;
+  is_vip: boolean;
+  is_interior_designer: boolean;
   artworks: Artwork[] | null;
 };
+
+const CLIENTS_PER_PAGE = 12;
 
 export default function ClientsPage() {
   const supabase = createClient();
 
   const [clients, setClients] = useState<Client[]>([]);
-  const [filtered, setFiltered] = useState<Client[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
 
   const [artistSearchText, setArtistSearchText] = useState("");
   const [artworkSearchText, setArtworkSearchText] = useState("");
@@ -38,7 +44,12 @@ export default function ClientsPage() {
   const [message, setMessage] = useState("");
 
   async function loadClients() {
-    const { data, error } = await supabase
+    setLoading(true);
+    setMessage("");
+    const loaded: Client[] = [];
+    // Fetch every batch so searches and page counts include the entire list.
+    while (true) {
+    const { data, error, count } = await supabase
       .from("customers")
       .select(`
         id,
@@ -47,6 +58,8 @@ export default function ClientsPage() {
         phone,
         address,
         notes,
+        is_vip,
+        is_interior_designer,
         artworks (
           id,
           title_jp,
@@ -55,25 +68,29 @@ export default function ClientsPage() {
           is_sold,
           market_price
         )
-      `)
-      .order("name", { ascending: true });
+      `, { count: "exact" })
+      .order("name", { ascending: true })
+      .order("id", { ascending: true })
+      .range(loaded.length, loaded.length + 499);
 
     if (error) {
       setMessage(error.message);
+      setLoading(false);
       return;
     }
 
-    if (data) {
-      setClients(data);
-      setFiltered(data);
+    loaded.push(...(data || []));
+    if (!data?.length || loaded.length >= (count ?? loaded.length)) break;
     }
+    setClients(loaded);
+    setLoading(false);
   }
 
   useEffect(() => {
     loadClients();
   }, []);
 
-  useEffect(() => {
+  const filtered = useMemo(() => {
     let result = clients;
 
     if (buyerSearchText.trim() !== "") {
@@ -111,8 +128,18 @@ export default function ClientsPage() {
       );
     }
 
-    setFiltered(result);
+    return result;
   }, [clients, buyerSearchText, artworkSearchText, activeCategory]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / CLIENTS_PER_PAGE));
+  const page = Math.min(currentPage, totalPages);
+  const pageStart = (page - 1) * CLIENTS_PER_PAGE;
+  const visibleClients = filtered.slice(pageStart, pageStart + CLIENTS_PER_PAGE);
+  const firstPageButton = Math.max(1, Math.min(page - 4, totalPages - 9));
+  const pageButtons = Array.from(
+    { length: Math.min(10, totalPages) },
+    (_, index) => firstPageButton + index
+  );
 
   return (
     // <div
@@ -136,7 +163,7 @@ export default function ClientsPage() {
           <p style={{ marginBottom: "20px", color: "#9c1515" }}>{message}</p>
         )}
 
-        {filtered.length === 0 ? (
+        {loading ? <p>Loading clients...</p> : filtered.length === 0 ? (
           <p>No clients found.</p>
         ) : (
           // <div
@@ -152,7 +179,7 @@ export default function ClientsPage() {
 
           <div className="artworks-grid">
 
-            {filtered.map((client) => (
+            {visibleClients.map((client) => (
               <Link
                 key={client.id}
                 href={`/clients/${client.id}`}
@@ -161,7 +188,7 @@ export default function ClientsPage() {
                   color: "inherit",
                   border: "1px solid #ddd",
                   padding: "20px",
-                  background: "#fafafa",
+                  background: client.is_vip ? "#fffbeb" : client.is_interior_designer ? "#eff6ff" : "#fafafa",
                 }}
               >
                 <h2
@@ -174,7 +201,8 @@ export default function ClientsPage() {
                   {client.name}
                 </h2>
 
-                {client.email && (
+                <ClientHighlightBadges vip={client.is_vip} designer={client.is_interior_designer} />
+{client.email && (
                   <p style={{ margin: "0 0 4px 0", fontSize: "14px" }}>
                     {client.email}
                   </p>
@@ -199,6 +227,35 @@ export default function ClientsPage() {
             ))}
           </div>
         )}
+        {!loading && filtered.length > 0 && (
+          <>
+            {totalPages > 1 && (
+              <nav aria-label="Client pages" className="mt-10 flex flex-wrap items-center justify-center gap-2">
+                <button type="button" disabled={page === 1}
+                  onClick={() => setCurrentPage(page - 1)}
+                  className="border border-gray-400 bg-white px-3 py-2 text-sm disabled:opacity-40">
+                  ← Previous
+                </button>
+                {pageButtons.map((number) => (
+                  <button key={number} type="button" aria-label={`Page ${number}`}
+                    aria-current={page === number ? "page" : undefined}
+                    onClick={() => setCurrentPage(number)}
+                    className={`min-w-9 border border-gray-400 px-3 py-2 text-sm ${page === number ? "bg-[#9c1515] text-white" : "bg-white text-black"}`}>
+                    {number}
+                  </button>
+                ))}
+                <button type="button" disabled={page === totalPages}
+                  onClick={() => setCurrentPage(page + 1)}
+                  className="border border-gray-400 bg-white px-3 py-2 text-sm disabled:opacity-40">
+                  Next →
+                </button>
+              </nav>
+            )}
+            <p aria-live="polite" className="mt-4 text-center text-xs text-gray-500">
+              {filtered.length} clients · Page {page} of {totalPages}
+            </p>
+          </>
+        )}
       </main>
 
       <ArtworkFilterPanel
@@ -208,11 +265,11 @@ export default function ClientsPage() {
         artistSearchText={artistSearchText}
         setArtistSearchText={setArtistSearchText}
         artworkSearchText={artworkSearchText}
-        setArtworkSearchText={setArtworkSearchText}
+        setArtworkSearchText={(value) => { setArtworkSearchText(value); setCurrentPage(1); }}
         buyerSearchText={buyerSearchText}
-        setBuyerSearchText={setBuyerSearchText}
+        setBuyerSearchText={(value) => { setBuyerSearchText(value); setCurrentPage(1); }}
         activeCategory={activeCategory}
-        setActiveCategory={setActiveCategory}
+        setActiveCategory={(value) => { setActiveCategory(value); setCurrentPage(1); }}
         showArtistSearch={false}
         showCategory={false}
         showStatus={false}
