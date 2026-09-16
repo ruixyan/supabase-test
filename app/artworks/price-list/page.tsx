@@ -34,10 +34,10 @@ export default function PriceListPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
-  const [priceListHeading, setPriceListHeading] = useState("Onishi Gallery");
+  const [priceListHeading, setPriceListHeading] = useState("Price List");
 
   const [priceListTitle, setPriceListTitle] =
-    useState("Price List");
+    useState("2026");
 
   const [showPreview, setShowPreview] =
     useState(false);

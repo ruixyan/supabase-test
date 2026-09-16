@@ -21,7 +21,8 @@
 .price-list-measurement .price-list-print-footer { margin-top: 0; }
 .price-list-category-rows { display: grid; row-gap: 6px; }
 
-.price-list-heading { margin-bottom: 12px; }
+.price-list-heading { position: relative; margin-bottom: 12px; }
+.price-list-logo { position: absolute; top: 0; right: 0; width: 144px; height: auto; }
 .price-list-heading h1 { margin: 0 0 4px; font-size: 18px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
 .price-list-heading > p { margin: 0; font-size: 13px; line-height: 1.2; overflow-wrap: anywhere; }
 .price-list-category-section { margin-bottom: 6px; }

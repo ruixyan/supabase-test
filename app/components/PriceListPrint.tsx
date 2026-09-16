@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import galleryLogo from "@/app/Onishi Gallery Logo.png";
 import { useLayoutEffect, useRef, useState } from "react";
 import "./price-list-print.css";
 
@@ -76,6 +77,15 @@ export default function PriceListPrint({ artworks, heading, subtitle }: {
   function renderSheet(page: PriceListArtwork[], pageIndex: number, measuring = false) {
     return <section className="price-list-sheet" key={pageIndex}>
         <header className="price-list-heading">
+          {!measuring && (
+            <Image
+              src={galleryLogo}
+              alt="Onishi Gallery"
+              className="price-list-logo"
+              loading="eager"
+              unoptimized
+            />
+          )}
           <h1>{heading || "\u00a0"}</h1>
           <p>{subtitle || "\u00a0"}</p>
         </header>
