@@ -13,7 +13,7 @@ export function ClientHighlightFields({ vip, designer, onChange }: {
 
 export function ClientHighlightBadges({ vip, designer }: { vip: boolean; designer: boolean }) {
   return <div className="my-2 flex flex-wrap gap-2 text-xs font-semibold">
-    {vip && <span className="border border-amber-600 bg-amber-100 px-2 py-1 text-amber-900">VIP</span>}
-    {designer && <span className="border border-blue-600 bg-blue-100 px-2 py-1 text-blue-900">Interior Designer</span>}
+    {vip && <span className="border border-[#9c1515] bg-[#9c1515] px-2 py-1 text-white">VIP</span>}
+    {designer && <span className="border border-[#9c1515] bg-white px-2 py-1 text-[#9c1515]">Interior Designer</span>}
   </div>;
 }

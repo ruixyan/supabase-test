@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import ViewModePanel from "@/app/components/ViewModePanel";
 
 type Props = {
   currentMode: "artworks" | "artists" | "clients";
@@ -33,6 +32,7 @@ type Props = {
   showCategory?: boolean;
   showStatus?: boolean;
   showPrice?: boolean;
+  showClientExport?: boolean;
 
   addNewLabel?: string;
   addNewHref?: string;
@@ -87,6 +87,7 @@ export default function ArtworkFilterPanel({
   showCategory = true,
   showStatus = true,
   showPrice = true,
+  showClientExport = true,
 
   addNewLabel,
   addNewHref,
@@ -116,9 +117,14 @@ export default function ArtworkFilterPanel({
         </Link>
       )}
 
-      {currentMode === "artworks" && (
+      {(currentMode === "artworks" || (currentMode === "clients" && showClientExport)) && (
         <Link
-          href="/artworks/price-list"
+          href={currentMode === "clients" ? "/clients/export" : "/artworks/price-list"}
+          onClick={() => {
+            if (currentMode === "clients") {
+              try { sessionStorage.setItem("clientScroll", String(window.scrollY)); } catch { /* Navigation still works. */ }
+            }
+          }}
           style={{
             display: "block",
             width: "100%",
@@ -132,7 +138,7 @@ export default function ArtworkFilterPanel({
             boxSizing: "border-box",
           }}
         >
-          Create Price List
+          {currentMode === "clients" ? "Export Client Profiles" : "Create Price List"}
         </Link>
       )}
 
