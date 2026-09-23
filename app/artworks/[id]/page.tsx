@@ -13,6 +13,7 @@ import {
 } from "react";
 import ReactMarkdown from "react-markdown";
 import ClientSelect from "@/app/components/ClientSelect";
+import { loadClientOptions } from "@/lib/client-options";
 import ArtworkStatus from "@/app/components/ArtworkStatus";
 import { syncRetailPrice } from "@/lib/artwork-copy";
 import ImageUploadField from "@/app/components/ImageUploadField";
@@ -213,10 +214,7 @@ export default function ArtworkDetailPage() {
         `)
         .order("name_en", { ascending: true }),
 
-      supabase
-        .from("customers")
-        .select("id, name")
-        .order("name", { ascending: true }),
+      loadClientOptions(supabase),
     ]);
 
     if (artistError) {
