@@ -1,5 +1,7 @@
 "use client";
 
+import PurchaseQuantity from "@/app/components/PurchaseQuantity";
+
 import { normalizeSearch } from "@/lib/search";
 
 import { createClient } from "@/lib/supabase/client";
@@ -15,7 +17,8 @@ type ArtworkOption = {
   title_jp: string | null;
   year: string | null;
   is_sold: boolean;
-  buyer_id: number | null;
+  buyer_ids: number[];
+  is_unique: boolean;
 };
 
 const inputStyle = {
@@ -43,6 +46,7 @@ export default function NewClientPage() {
 
   const [artworks, setArtworks] = useState<ArtworkOption[]>([]);
   const [selectedArtworkIds, setSelectedArtworkIds] = useState<number[]>([]);
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [artworkSearch, setArtworkSearch] = useState("");
 
   const [message, setMessage] = useState("");
@@ -60,8 +64,10 @@ export default function NewClientPage() {
           title_jp,
           year,
           is_sold,
-          buyer_id
+          buyer_ids,
+          is_unique
         `)
+        .or("is_unique.eq.false,buyer_ids.eq.{}")
         .order("artist_name", { ascending: true });
 
       if (error) {
@@ -95,6 +101,11 @@ export default function NewClientPage() {
       return;
     }
 
+    if (selectedArtworkIds.some((id) => !Number.isInteger(quantities[id] ?? 1) || (quantities[id] ?? 1) < 1 || (quantities[id] ?? 1) > 2147483647)) {
+      setMessage("Purchase quantities must be positive whole numbers up to 2147483647.");
+      return;
+    }
+
     setSubmitting(true);
     setMessage("");
 
@@ -121,14 +132,10 @@ export default function NewClientPage() {
     }
 
     if (selectedArtworkIds.length > 0) {
-      const { error: artworkError } = await supabase
-        .from("artworks")
-        .update({
-          buyer_id: newClient.id,
-          is_sold: true,
-          is_unavailable: false,
-        })
-        .in("id", selectedArtworkIds);
+      const { error: artworkError } = await supabase.rpc("set_artwork_buyer_quantities", {
+        p_buyer_id: newClient.id,
+        p_quantities: Object.fromEntries(selectedArtworkIds.map((id) => [id, quantities[id] ?? 1])),
+      });
 
       if (artworkError) {
         setMessage(
@@ -167,7 +174,7 @@ export default function NewClientPage() {
         width: "100%",
         maxWidth: "760px",
         margin: "0 auto",
-        padding: "48px 72px",
+        padding: "var(--page-padding)",
       }}
     >
       <Link
@@ -267,6 +274,7 @@ export default function NewClientPage() {
           <div
             style={{
               display: "flex",
+              flexWrap: "wrap",
               justifyContent: "space-between",
               alignItems: "center",
               marginBottom: "8px",
@@ -327,10 +335,11 @@ export default function NewClientPage() {
                   `Artwork ${artwork.id}`;
 
                 return (
-                  <label
+                  <div
                     key={artwork.id}
                     style={{
                       display: "flex",
+                      flexWrap: "wrap",
                       gap: "12px",
                       alignItems: "flex-start",
                       padding: "12px 14px",
@@ -342,6 +351,7 @@ export default function NewClientPage() {
                     <input
                       type="checkbox"
                       checked={selected}
+                      aria-label={`Select ${title}`}
                       onChange={() => toggleArtwork(artwork.id)}
                       style={{ marginTop: "3px" }}
                     />
@@ -381,7 +391,10 @@ export default function NewClientPage() {
                         </p>
                       )}
                     </div>
-                  </label>
+                    {selected && artwork.is_unique === false && <PurchaseQuantity
+                      value={quantities[artwork.id] ?? 1} label={`Quantity of ${title}`}
+                      onChange={(quantity) => setQuantities((current) => ({ ...current, [artwork.id]: quantity }))} />}
+                  </div>
                 );
               })
             )}

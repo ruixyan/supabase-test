@@ -249,6 +249,7 @@ export default function PriceListPage() {
           className="price-list-controls"
           style={{
             display: "flex",
+            flexWrap: "wrap",
             justifyContent:
               "space-between",
             alignItems: "center",
@@ -276,6 +277,7 @@ export default function PriceListPage() {
           <div
             style={{
               display: "flex",
+              flexWrap: "wrap",
               alignItems: "center",
               gap: "16px",
             }}
@@ -325,7 +327,7 @@ export default function PriceListPage() {
       style={{
         maxWidth: "1200px",
         margin: "0 auto",
-        padding: "48px 72px",
+        padding: "var(--page-padding)",
       }}
     >
       <Link
@@ -418,6 +420,7 @@ export default function PriceListPage() {
       <div
         style={{
           display: "flex",
+          flexWrap: "wrap",
           justifyContent:
             "space-between",
           alignItems: "center",
@@ -494,11 +497,8 @@ export default function PriceListPage() {
                 return (
                   <label
                     key={artwork.id}
+                    className="price-list-option"
                     style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "24px 80px 1fr auto",
-                      gap: "14px",
                       alignItems:
                         "center",
                       padding:
@@ -774,6 +774,7 @@ export default function PriceListPage() {
       <div
         style={{
           display: "flex",
+          flexWrap: "wrap",
           justifyContent:
             "flex-end",
           marginTop: "24px",

@@ -98,6 +98,17 @@ If you wish to just develop locally and not deploy to Vercel, [follow the steps 
 
 > Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
 
+## Responsive layout checks
+
+Run browser checks against local mock data (no live Supabase requests):
+
+```sh
+npm install --prefix node_modules/.responsive-test --no-save --package-lock=false playwright
+node tests/responsive-pages.mjs
+```
+
+The suite checks all 19 routes at 320, 375, 768, 1024, and 1440 pixels, including detail-page editing, purchase quantity controls, and the fixed-size price-list preview. It starts a separate server on port 3107, stores screenshots/logs under `node_modules/.responsive-test/results`, and leaves the usual development server running. It uses installed Edge/Chrome on Windows; elsewhere, install Playwright Chromium or set `RESPONSIVE_BROWSER` to a browser executable. To check specific routes, pass `--routes=/protected,/clients/1`.
+
 ## Feedback and issues
 
 Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).

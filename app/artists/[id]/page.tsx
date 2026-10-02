@@ -417,7 +417,7 @@ export default function ArtistDetailPage() {
 
   if (message === "Loading...") {
     return (
-      <main style={{ padding: "48px 72px" }}>
+      <main style={{ padding: "var(--page-padding)" }}>
         <p>Loading...</p>
       </main>
     );
@@ -425,7 +425,7 @@ export default function ArtistDetailPage() {
 
   if (!artist) {
     return (
-      <main style={{ padding: "48px 72px" }}>
+      <main style={{ padding: "var(--page-padding)" }}>
         <p>{message || "Artist not found."}</p>
 
         <Link
@@ -494,6 +494,7 @@ export default function ArtistDetailPage() {
               <div
                 style={{
                   display: "flex",
+                  flexWrap: "wrap",
                   justifyContent: "space-between",
                   alignItems: "flex-start",
                   gap: "24px",
@@ -782,6 +783,7 @@ export default function ArtistDetailPage() {
               <div
                 style={{
                   display: "flex",
+                  flexWrap: "wrap",
                   justifyContent: "space-between",
                   alignItems: "center",
                   marginBottom: "8px",
@@ -852,6 +854,7 @@ export default function ArtistDetailPage() {
                         key={artwork.id}
                         style={{
                           display: "flex",
+                          flexWrap: "wrap",
                           gap: "12px",
                           alignItems: "flex-start",
                           padding: "12px 14px",
@@ -930,6 +933,7 @@ export default function ArtistDetailPage() {
             <div
   style={{
     display: "flex",
+    flexWrap: "wrap",
     justifyContent: "space-between",
     alignItems: "center",
     gap: "16px",
@@ -939,6 +943,7 @@ export default function ArtistDetailPage() {
   <div
     style={{
       display: "flex",
+      flexWrap: "wrap",
       gap: "10px",
     }}
   >

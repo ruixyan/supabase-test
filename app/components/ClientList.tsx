@@ -135,7 +135,7 @@ export default function ClientList({ exportMode = false }: { exportMode?: boolea
         notes,
         is_vip,
         is_interior_designer,
-        artworks (
+        artworks:purchased_artworks (
           id,
           title_jp,
           title_en,

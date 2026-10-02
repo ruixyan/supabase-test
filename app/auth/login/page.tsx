@@ -40,7 +40,8 @@ export default function LoginPage() {
     <main
       style={{
         maxWidth: "420px",
-        margin: "100px auto",
+        margin: "clamp(24px, 8vw, 100px) auto",
+        width: "calc(100% - 32px)",
         padding: "32px",
         border: "1px solid #ddd",
         background: "white",

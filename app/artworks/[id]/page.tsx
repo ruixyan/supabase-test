@@ -12,7 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import ReactMarkdown from "react-markdown";
-import ClientSelect from "@/app/components/ClientSelect";
+import ArtworkBuyerSelect from "@/app/components/ArtworkBuyerSelect";
 import { loadClientOptions } from "@/lib/client-options";
 import ArtworkStatus from "@/app/components/ArtworkStatus";
 import { syncRetailPrice } from "@/lib/artwork-copy";
@@ -48,7 +48,8 @@ type Artwork = {
   category: string | null;
   is_sold: boolean;
   is_unique: boolean;
-  buyer_id: number | null;
+  buyer_ids: number[];
+  buyer_quantities: Record<string, number>;
   market_price: number | null;
   cost: number | null;
   note: string | null;
@@ -111,7 +112,8 @@ export default function ArtworkDetailPage() {
     copy_info: "",
     is_unique: true,
     is_sold: false,
-    buyer_id: "",
+    buyer_ids: [] as number[],
+    buyer_quantities: {} as Record<string, number>,
   });
 
   async function loadArtwork() {
@@ -141,7 +143,8 @@ export default function ArtworkDetailPage() {
         category,
         is_unique,
         is_sold,
-        buyer_id,
+        buyer_ids,
+        buyer_quantities,
         market_price,
         cost,
         note,
@@ -153,7 +156,7 @@ export default function ArtworkDetailPage() {
           name_jp,
           artist_photo_url
         ),
-        customers (
+        customers:artwork_buyers (
           id,
           name
         )
@@ -192,7 +195,8 @@ export default function ArtworkDetailPage() {
   copy_info: data.copy_info || "",
   is_unique: data.is_unique,
   is_sold: data.is_sold,
-  buyer_id: data.buyer_id ? String(data.buyer_id) : "",
+  buyer_ids: data.buyer_ids,
+  buyer_quantities: data.buyer_quantities,
 });
 
     setMessage("");
@@ -238,7 +242,7 @@ export default function ArtworkDetailPage() {
 
   if (message === "Loading...") {
     return (
-      <main style={{ padding: "48px 72px" }}>
+      <main style={{ padding: "var(--page-padding)" }}>
         <p>Loading...</p>
       </main>
     );
@@ -246,7 +250,7 @@ export default function ArtworkDetailPage() {
 
   if (!artwork) {
     return (
-      <main style={{ padding: "48px 72px" }}>
+      <main style={{ padding: "var(--page-padding)" }}>
         <p>{message || "Artwork not found."}</p>
 
         <BackToArtworks />
@@ -258,9 +262,9 @@ export default function ArtworkDetailPage() {
     ? artwork.artists[0]
     : artwork.artists;
 
-  const customer = Array.isArray(artwork.customers)
-    ? artwork.customers[0]
-    : artwork.customers;
+  const buyers = Array.isArray(artwork.customers)
+    ? artwork.customers
+    : artwork.customers ? [artwork.customers] : [];
 
   const artistDisplayName =
     artist?.name_en ||
@@ -321,7 +325,7 @@ export default function ArtworkDetailPage() {
       
         const generatedText = [
           `**${selectedArtistName}**`,
-          `*${titleWithYear}*`,
+          titleWithYear,
           form.material.trim(),
           form.dimensions.trim(),
           generatedMarketPrice,
@@ -476,9 +480,8 @@ function cancelEditing() {
     copy_info: artwork.copy_info || "",
     is_unique: artwork.is_unique,
     is_sold: artwork.is_sold,
-    buyer_id: artwork.buyer_id
-      ? String(artwork.buyer_id)
-      : "",
+    buyer_ids: artwork.buyer_ids,
+    buyer_quantities: artwork.buyer_quantities,
   });
 
   setMessage("");
@@ -536,6 +539,16 @@ async function deleteArtwork() {
     event: React.FormEvent<HTMLFormElement>
   ) {
     event.preventDefault();
+
+    if (form.is_sold && form.is_unique && (form.buyer_ids.length > 1 || form.buyer_ids.some((id) => (form.buyer_quantities[id] ?? 1) > 1))) {
+      setMessage("Unique artworks allow one buyer and one copy. Reduce buyers and quantity or choose Multiple.");
+      return;
+    }
+
+    if (form.is_sold && form.buyer_ids.some((id) => !Number.isInteger(form.buyer_quantities[id] ?? 1) || (form.buyer_quantities[id] ?? 1) < 1 || (form.buyer_quantities[id] ?? 1) > 2147483647)) {
+      setMessage("Purchase quantities must be positive whole numbers up to 2147483647.");
+      return;
+    }
 
     if (!form.artist_id) {
       setMessage("Please select an artist.");
@@ -601,10 +614,8 @@ async function deleteArtwork() {
     is_unique: form.is_unique,
     is_sold: form.is_sold,
 
-    buyer_id:
-      form.is_sold && form.buyer_id
-        ? Number(form.buyer_id)
-        : null,
+    buyer_ids: form.is_sold ? form.buyer_ids : [],
+    buyer_quantities: form.is_sold ? form.buyer_quantities : {},
   })
   .eq("id", id);
 
@@ -626,7 +637,7 @@ async function deleteArtwork() {
     //   style={{
     //     maxWidth: "1200px",
     //     margin: "0 auto",
-    //     padding: "48px 72px",
+    //     padding: "var(--page-padding)",
     //   }}
     // >
 
@@ -639,6 +650,7 @@ async function deleteArtwork() {
           <div
             style={{
               display: "flex",
+              flexWrap: "wrap",
               justifyContent: "flex-end",
               marginTop: "24px",
             }}
@@ -783,6 +795,7 @@ async function deleteArtwork() {
               <div
   style={{
     display: "flex",
+    flexWrap: "wrap",
     gap: "8px",
     marginTop: "16px",
   }}
@@ -863,13 +876,13 @@ async function deleteArtwork() {
                   }}
                 >
                   <h3 style={{ marginTop: 0 }}>
-                    Client
+                    {artwork.is_unique ? "Client" : "Buyers"}
                   </h3>
 
-                  {customer ? (
-                    <Link href={`/clients/${customer.id}`}>
-                      {customer.name}
-                    </Link>
+                  {buyers.length ? (
+                    <div className="space-y-2">{buyers.map((buyer) => (
+                      <div key={buyer.id}><Link href={`/clients/${buyer.id}`}>{buyer.name}</Link>{artwork.is_unique === false && <span> / Quantity: {artwork.buyer_quantities[buyer.id] ?? 1}</span>}</div>
+                    ))}</div>
                   ) : (
                     <p>Unknown client</p>
                   )}
@@ -1149,6 +1162,7 @@ async function deleteArtwork() {
               <div
                 style={{
                   display: "flex",
+                  flexWrap: "wrap",
                   justifyContent: "space-between",
                   alignItems: "center",
                   gap: "12px",
@@ -1182,6 +1196,7 @@ async function deleteArtwork() {
               <div
                 style={{
                   display: "flex",
+                  flexWrap: "wrap",
                   gap: "8px",
                   marginBottom: "8px",
                 }}
@@ -1290,7 +1305,7 @@ async function deleteArtwork() {
   <div
     style={{
       display: "grid",
-      gridTemplateColumns: "1fr 1fr",
+      gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
       gap: "8px",
     }}
   >
@@ -1326,15 +1341,19 @@ async function deleteArtwork() {
   </div>
 </div>
             <ArtworkStatus sold={form.is_sold} unavailable={form.is_unavailable}
-    onChange={(is_sold, is_unavailable) => setForm({ ...form, is_sold, is_unavailable, buyer_id: is_sold ? form.buyer_id : "" })} />
-  {form.is_sold && <FormField label="Client (optional)">
-    <ClientSelect clients={clientOptions} value={form.buyer_id}
-      onChange={(buyer_id) => setForm({ ...form, buyer_id })} />
+    onChange={(is_sold, is_unavailable) => setForm({ ...form, is_sold, is_unavailable, buyer_ids: is_sold ? form.buyer_ids : [], buyer_quantities: is_sold ? form.buyer_quantities : {} })} />
+  {form.is_sold && <FormField label={form.is_unique ? "Client (optional)" : "Buyers (optional)"}>
+    {form.is_unique && form.buyer_ids.length > 1 && <p role="alert">Unique artworks allow one buyer. Remove extra buyers or choose Multiple.</p>}
+    <ArtworkBuyerSelect clients={clientOptions} value={form.buyer_ids} multiple={!form.is_unique || form.buyer_ids.length > 1}
+      quantities={form.buyer_quantities}
+      onQuantityChange={(id, quantity) => setForm({ ...form, buyer_quantities: { ...form.buyer_quantities, [id]: quantity } })}
+      onChange={(buyer_ids) => setForm({ ...form, buyer_ids, buyer_quantities: Object.fromEntries(buyer_ids.map((id) => [id, form.buyer_quantities[id] ?? 1])) })} />
   </FormField>}
 
 <div
   style={{
     display: "flex",
+    flexWrap: "wrap",
     justifyContent: "space-between",
     alignItems: "center",
     gap: "16px",
@@ -1344,6 +1363,7 @@ async function deleteArtwork() {
   <div
     style={{
       display: "flex",
+      flexWrap: "wrap",
       gap: "10px",
     }}
   >
@@ -1504,6 +1524,7 @@ async function deleteArtwork() {
               href={artistHref}
               style={{
                 display: "flex",
+                flexWrap: "wrap",
                 gap: "24px",
                 alignItems: "center",
                 textDecoration: "none",

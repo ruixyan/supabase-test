@@ -4,6 +4,13 @@
   padding: 24px;
 }
 
+/* Scroll only the paper preview; keep its measured Letter layout intact. */
+@media screen {
+  .price-list-preview-main { padding: var(--page-padding); }
+  .price-list-preview { max-width: 100%; overflow-x: auto; padding: 1px; }
+  .price-list-preview > .price-list-sheet { flex-shrink: 0; }
+}
+
 .price-list-sheet {
   box-sizing: border-box;
   background: white;

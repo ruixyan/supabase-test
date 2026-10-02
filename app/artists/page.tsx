@@ -47,7 +47,7 @@ export default function ArtistsPage() {
         .select("id, name, name_en, name_jp, artist_photo_url, nationality, birth_year", { count: "exact" })
         .order("name_en", { ascending: true, nullsFirst: false }).order("id").range(from, to)),
       loadAllRows<SearchArtwork>((from, to) => client.from("artworks")
-        .select("id, artist_id, title_en, title_jp, customers(name)", { count: "exact" })
+        .select("id, artist_id, title_en, title_jp, customers:artwork_buyers(name)", { count: "exact" })
         .order("id").range(from, to))
     ]).then(([artists, works]) => { if (active) { setAllArtists(artists); setSearchArtworks(works); } })
       .catch((error: Error) => { if (active) setMessage(error.message); })

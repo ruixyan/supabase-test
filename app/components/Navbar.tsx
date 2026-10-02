@@ -16,7 +16,7 @@ export default function Navbar() {
 
   return (
     <nav className="navbar">
-      <Link href="/" style={{ height: "10%", width: "10%" }}>
+      <Link href="/" className="navbar-brand" aria-label="Onishi Gallery home">
         <img
           src="/Onishi_Gallery_Logo.png"
           alt="logo"
@@ -24,22 +24,8 @@ export default function Navbar() {
         />
       </Link>
 
-      <div
-        style={{
-          marginLeft: "auto",
-          display: "flex",
-          alignItems: "center",
-          gap: "32px",
-        }}
-      >
-        <div
-          className="navbar-links"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "32px",
-          }}
-        >
+      <div className="navbar-actions">
+        <div className="navbar-links">
           <Link href="/artworks" style={linkStyle("/artworks")}>
             Artworks
           </Link>

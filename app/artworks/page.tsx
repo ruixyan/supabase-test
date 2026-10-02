@@ -101,7 +101,7 @@ export default function ArtworksPage() {
     let active = true;
     const client = createClient();
     loadAllRows<Artwork>((from, to) => client.from("artworks")
-      .select("id, artist_name, artist_photo_url, artwork_photo_url, title_jp, title_en, year, market_price, material, dimensions, category, is_unique, is_sold, is_unavailable, created_at, customers(id, name)", { count: "exact" })
+      .select("id, artist_name, artist_photo_url, artwork_photo_url, title_jp, title_en, year, market_price, material, dimensions, category, is_unique, is_sold, is_unavailable, created_at, customers:artwork_buyers(id, name)", { count: "exact" })
       .order("created_at", { ascending: false }).order("id", { ascending: false }).range(from, to))
       .then((data) => { if (active) setAllArtworks(data); })
       .catch((error: Error) => { if (active) setMessage(error.message); })

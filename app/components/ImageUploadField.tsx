@@ -205,6 +205,7 @@ export default function ImageUploadField({
           <div
             style={{
               display: "flex",
+              flexWrap: "wrap",
               justifyContent: "space-between",
               alignItems: "center",
               gap: "12px",
@@ -250,6 +251,7 @@ export default function ImageUploadField({
         <div
           style={{
             display: "flex",
+            flexWrap: "wrap",
             alignItems: "center",
             gap: "10px",
             margin: "16px 0",

@@ -194,7 +194,7 @@ export default function NewArtistPage() {
         width: "100%",
         maxWidth: "760px",
         margin: "0 auto",
-        padding: "48px 72px",
+        padding: "var(--page-padding)",
       }}
     >
       <Link
@@ -383,6 +383,7 @@ export default function NewArtistPage() {
           <div
             style={{
               display: "flex",
+              flexWrap: "wrap",
               justifyContent: "space-between",
               alignItems: "center",
               marginBottom: "8px",
@@ -462,6 +463,7 @@ export default function NewArtistPage() {
                     key={artwork.id}
                     style={{
                       display: "flex",
+                      flexWrap: "wrap",
                       gap: "12px",
                       alignItems: "flex-start",
                       padding: "12px 14px",

@@ -1,5 +1,7 @@
 "use client";
 
+import PurchaseQuantity from "@/app/components/PurchaseQuantity";
+
 import { normalizeSearch } from "@/lib/search";
 
 import { createClient } from "@/lib/supabase/client";
@@ -29,7 +31,9 @@ type Artwork = {
   year: string | null;
   material: string | null;
   dimensions: string | null;
-  buyer_id: number | null;
+  buyer_ids: number[];
+  buyer_quantities: Record<string, number>;
+  is_unique: boolean;
   is_sold: boolean;
 };
 
@@ -52,6 +56,7 @@ export default function ClientDetailPage() {
   const [availableArtworks, setAvailableArtworks] = useState<Artwork[]>([]);
 
   const [selectedArtworkIds, setSelectedArtworkIds] = useState<number[]>([]);
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [originalArtworkIds, setOriginalArtworkIds] = useState<number[]>([]);
 
   const [artworkSearch, setArtworkSearch] = useState("");
@@ -109,10 +114,12 @@ export default function ClientDetailPage() {
         year,
         material,
         dimensions,
-        buyer_id,
+        buyer_ids,
+        buyer_quantities,
+        is_unique,
         is_sold
       `)
-      .eq("buyer_id", clientId)
+      .contains("buyer_ids", [clientId])
       .order("created_at", { ascending: false });
 
     if (ownedError) {
@@ -121,13 +128,7 @@ export default function ClientDetailPage() {
       return;
     }
 
-    /*
-      只载入：
-      1. 当前 Client 已经拥有的作品
-      2. 目前没有 buyer 的作品
-
-      这样不会误把其他 Client 的作品转移过来。
-    */
+    // Multiple works remain selectable even when they have other buyers.
     const { data: selectableData, error: selectableError } = await supabase
       .from("artworks")
       .select(`
@@ -139,10 +140,12 @@ export default function ClientDetailPage() {
         year,
         material,
         dimensions,
-        buyer_id,
+        buyer_ids,
+        buyer_quantities,
+        is_unique,
         is_sold
       `)
-      .or(`buyer_id.is.null,buyer_id.eq.${clientId}`)
+      .or(`is_unique.eq.false,buyer_ids.eq.{},buyer_ids.cs.{${clientId}}`)
       .order("artist_name", { ascending: true });
 
     if (selectableError) {
@@ -158,6 +161,7 @@ export default function ClientDetailPage() {
     setAvailableArtworks(selectableData || []);
     setSelectedArtworkIds(ownedIds);
     setOriginalArtworkIds(ownedIds);
+    setQuantities(Object.fromEntries((ownedData || []).map((artwork) => [artwork.id, artwork.buyer_quantities[clientId] ?? 1])));
 
     setForm({
       name: clientData.name || "",
@@ -200,6 +204,7 @@ export default function ClientDetailPage() {
     });
 
     setSelectedArtworkIds(originalArtworkIds);
+    setQuantities(Object.fromEntries(ownedArtworks.map((artwork) => [artwork.id, artwork.buyer_quantities[clientId] ?? 1])));
     setArtworkSearch("");
     setMessage("");
     setIsEditing(false);
@@ -210,6 +215,11 @@ export default function ClientDetailPage() {
 
     if (!form.name.trim()) {
       setMessage("Client name is required.");
+      return;
+    }
+
+    if (selectedArtworkIds.some((id) => !Number.isInteger(quantities[id] ?? 1) || (quantities[id] ?? 1) < 1 || (quantities[id] ?? 1) > 2147483647)) {
+      setMessage("Purchase quantities must be positive whole numbers up to 2147483647.");
       return;
     }
 
@@ -235,53 +245,21 @@ export default function ClientDetailPage() {
       return;
     }
 
-    const removedArtworkIds = originalArtworkIds.filter(
-      (id) => !selectedArtworkIds.includes(id)
-    );
-
-    const addedArtworkIds = selectedArtworkIds.filter(
-      (id) => !originalArtworkIds.includes(id)
-    );
-
-    /*
-      先把取消选择的作品恢复为 Available。
-      buyer_id 必须和 is_sold 同时更新，避免触发 constraint。
-    */
-    if (removedArtworkIds.length > 0) {
-      const { error: removedError } = await supabase
-        .from("artworks")
-        .update({
-          buyer_id: null,
-          is_sold: false,
-        })
-        .in("id", removedArtworkIds);
-
-      if (removedError) {
-        setMessage(
-          `Client information was updated, but some works could not be removed: ${removedError.message}`
-        );
-        setSaving(false);
-        return;
-      }
+    const changes: Record<string, number> = {};
+    for (const artworkId of originalArtworkIds) {
+      if (!selectedArtworkIds.includes(artworkId)) changes[artworkId] = 0;
     }
-
-    /*
-      再把新选择的作品关联到当前 Client，并设为 Sold。
-    */
-    if (addedArtworkIds.length > 0) {
-      const { error: addedError } = await supabase
-        .from("artworks")
-        .update({
-          buyer_id: clientId,
-          is_sold: true,
-          is_unavailable: false,
-        })
-        .in("id", addedArtworkIds);
-
-      if (addedError) {
-        setMessage(
-          `Client information was updated, but some works could not be linked: ${addedError.message}`
-        );
+    for (const artworkId of selectedArtworkIds) {
+      const quantity = quantities[artworkId] ?? 1;
+      const original = ownedArtworks.find((artwork) => artwork.id === artworkId);
+      if (!original || quantity !== original.buyer_quantities[clientId]) changes[artworkId] = quantity;
+    }
+    if (Object.keys(changes).length > 0) {
+      const { error } = await supabase.rpc("set_artwork_buyer_quantities", {
+        p_buyer_id: clientId, p_quantities: changes,
+      });
+      if (error) {
+        setMessage(`Client information was updated, but purchased works could not be saved: ${error.message}`);
         setSaving(false);
         return;
       }
@@ -306,13 +284,9 @@ export default function ClientDetailPage() {
   setSaving(true);
   setMessage("");
 
-  const { error: artworkError } = await supabase
-    .from("artworks")
-    .update({
-      buyer_id: null,
-      is_sold: false,
-    })
-    .eq("buyer_id", client.id);
+  const { error: artworkError } = await supabase.rpc("change_artwork_buyer", {
+    p_artwork_ids: ownedArtworks.map((artwork) => artwork.id), p_buyer_id: client.id, p_add: false,
+  });
 
   if (artworkError) {
     setMessage(
@@ -365,7 +339,7 @@ export default function ClientDetailPage() {
 
   if (loading) {
     return (
-      <main style={{ padding: "48px 72px" }}>
+      <main style={{ padding: "var(--page-padding)" }}>
         <p>Loading...</p>
       </main>
     );
@@ -373,7 +347,7 @@ export default function ClientDetailPage() {
 
   if (!client) {
     return (
-      <main style={{ padding: "48px 72px" }}>
+      <main style={{ padding: "var(--page-padding)" }}>
         <p>{message || "Client not found."}</p>
 
         <Link
@@ -392,7 +366,7 @@ export default function ClientDetailPage() {
   return (
     <main
       style={{
-        padding: "48px 72px",
+        padding: "var(--page-padding)",
         maxWidth: "1400px",
         margin: "0 auto",
       }}
@@ -419,6 +393,7 @@ export default function ClientDetailPage() {
           <div
             style={{
               display: "flex",
+              flexWrap: "wrap",
               justifyContent: "space-between",
               alignItems: "flex-start",
               gap: "24px",
@@ -600,6 +575,7 @@ export default function ClientDetailPage() {
               <div
                 style={{
                   display: "flex",
+                  flexWrap: "wrap",
                   justifyContent: "space-between",
                   alignItems: "center",
                   marginBottom: "8px",
@@ -663,10 +639,11 @@ export default function ClientDetailPage() {
                       `Artwork ${artwork.id}`;
 
                     return (
-                      <label
+                      <div
                         key={artwork.id}
                         style={{
                           display: "flex",
+                          flexWrap: "wrap",
                           gap: "12px",
                           padding: "12px 14px",
                           borderBottom: "1px solid #e5e5e5",
@@ -677,6 +654,7 @@ export default function ClientDetailPage() {
                         <input
                           type="checkbox"
                           checked={selected}
+                          aria-label={`Select ${title}`}
                           onChange={() => toggleArtwork(artwork.id)}
                           style={{
                             marginTop: "3px",
@@ -706,7 +684,10 @@ export default function ClientDetailPage() {
                               .join(", ")}
                           </p>
                         </div>
-                      </label>
+                        {selected && artwork.is_unique === false && <PurchaseQuantity
+                          value={quantities[artwork.id] ?? 1} label={`Quantity of ${title}`}
+                          onChange={(quantity) => setQuantities((current) => ({ ...current, [artwork.id]: quantity }))} />}
+                      </div>
                     );
                   })
                 )}
@@ -716,6 +697,7 @@ export default function ClientDetailPage() {
 <div
   style={{
     display: "flex",
+    flexWrap: "wrap",
     justifyContent: "space-between",
     alignItems: "center",
     gap: "16px",
@@ -725,6 +707,7 @@ export default function ClientDetailPage() {
   <div
     style={{
       display: "flex",
+      flexWrap: "wrap",
       gap: "10px",
     }}
   >
@@ -808,13 +791,7 @@ export default function ClientDetailPage() {
         {ownedArtworks.length === 0 ? (
           <p>No purchased artworks found.</p>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, minmax(220px, 1fr))",
-              gap: "56px 48px",
-            }}
-          >
+          <div className="artist-works-grid">
             {ownedArtworks.map((artwork) => (
               <Link
                 key={artwork.id}
@@ -870,6 +847,10 @@ export default function ClientDetailPage() {
                     {artwork.title_jp}
                   </p>
                 )}
+
+                {artwork.is_unique === false && <p style={{ margin: "0 0 3px 0", fontSize: "14px" }}>
+                  Quantity: {artwork.buyer_quantities[clientId] ?? 1}
+                </p>}
 
                 {artwork.year && (
                   <p
