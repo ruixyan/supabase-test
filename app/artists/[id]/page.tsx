@@ -1,5 +1,7 @@
 "use client";
 
+import ImageUploadField from "@/app/components/ImageUploadField";
+
 import { normalizeSearch } from "@/lib/search";
 
 import { createClient } from "@/lib/supabase/client";
@@ -63,6 +65,7 @@ export default function ArtistDetailPage() {
   const [message, setMessage] = useState("Loading...");
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [photoPending, setPhotoPending] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -220,6 +223,11 @@ export default function ArtistDetailPage() {
   async function saveArtist(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (photoPending) {
+      setMessage("Upload or clear the selected photo before saving.");
+      return;
+    }
+
     const displayName =
       form.name_en.trim() ||
       form.name.trim() ||
@@ -239,8 +247,14 @@ export default function ArtistDetailPage() {
     const { error: artistError } = await supabase
       .from("artists")
       .update({
-        name: form.name.trim() || null,
-        name_en: form.name_en.trim() || null,
+        // Preserve both stored names unless the visible name was explicitly edited.
+        ...(artist?.name_en?.trim()
+          ? form.name_en !== (artist.name_en || "")
+            ? { name_en: form.name_en.trim() || null }
+            : {}
+          : form.name !== (artist?.name || "")
+            ? { name: form.name.trim() || null }
+            : {}),
         name_jp: form.name_jp.trim() || null,
         artist_photo_url: artistPhotoUrl,
         bio: form.bio.trim() || null,
@@ -611,28 +625,15 @@ export default function ArtistDetailPage() {
               gap: "16px",
             }}
           >
-            <FormField label="Name">
+            <FormField label="Name / English Name">
               <input
                 type="text"
-                value={form.name}
+                aria-label="Name / English Name"
+                value={artist?.name_en?.trim() ? form.name_en : form.name}
                 onChange={(event) =>
                   setForm({
                     ...form,
-                    name: event.target.value,
-                  })
-                }
-                style={inputStyle}
-              />
-            </FormField>
-
-            <FormField label="English Name">
-              <input
-                type="text"
-                value={form.name_en}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    name_en: event.target.value,
+                    [artist?.name_en?.trim() ? "name_en" : "name"]: event.target.value,
                   })
                 }
                 style={inputStyle}
@@ -653,20 +654,22 @@ export default function ArtistDetailPage() {
               />
             </FormField>
 
-            <FormField label="Artist Photo URL">
-              <input
-                type="url"
-                value={form.artist_photo_url}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    artist_photo_url: event.target.value,
-                  })
-                }
-                placeholder="https://..."
-                style={inputStyle}
-              />
-            </FormField>
+            <ImageUploadField
+              label="Artist Photo"
+              bucket="artworks"
+              folder="artist-photos"
+              value={form.artist_photo_url}
+              disabled={saving}
+              onPendingChange={setPhotoPending}
+              onChange={(url) =>
+                setForm((current) => ({ ...current, artist_photo_url: url }))
+              }
+            />
+            {photoPending && (
+              <p role="status" style={{ margin: 0, fontSize: "13px" }}>
+                Click Upload Image or clear the selected photo before saving.
+              </p>
+            )}
 
             <FormField label="Nationality">
               <input
@@ -941,7 +944,7 @@ export default function ArtistDetailPage() {
   >
     <button
       type="submit"
-      disabled={saving}
+      disabled={saving || photoPending}
       style={{
         padding: "11px 16px",
         border: "1px solid #9c1515",

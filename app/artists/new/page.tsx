@@ -1,5 +1,7 @@
 "use client";
 
+import ImageUploadField from "@/app/components/ImageUploadField";
+
 import { normalizeSearch } from "@/lib/search";
 
 import { createClient } from "@/lib/supabase/client";
@@ -31,7 +33,6 @@ export default function NewArtistPage() {
   const router = useRouter();
 
   const [form, setForm] = useState({
-    name: "",
     name_en: "",
     name_jp: "",
     artist_photo_url: "",
@@ -50,6 +51,7 @@ export default function NewArtistPage() {
 
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [photoPending, setPhotoPending] = useState(false);
   const [loadingArtworks, setLoadingArtworks] = useState(true);
 
   useEffect(() => {
@@ -94,9 +96,13 @@ export default function NewArtistPage() {
   async function addArtist(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (photoPending) {
+      setMessage("Upload or clear the selected photo before saving.");
+      return;
+    }
+
     const displayName =
       form.name_en.trim() ||
-      form.name.trim() ||
       form.name_jp.trim();
 
     if (!displayName) {
@@ -111,7 +117,7 @@ export default function NewArtistPage() {
       .from("artists")
       .insert([
         {
-          name: form.name.trim() || null,
+          name: form.name_en.trim() || null,
           name_en: form.name_en.trim() || null,
           name_jp: form.name_jp.trim() || null,
           artist_photo_url: form.artist_photo_url.trim() || null,
@@ -221,23 +227,10 @@ export default function NewArtistPage() {
           gap: "16px",
         }}
       >
-        <FormField label="Name">
+        <FormField label="Name / English Name">
           <input
             type="text"
-            value={form.name}
-            onChange={(event) =>
-              setForm({
-                ...form,
-                name: event.target.value,
-              })
-            }
-            style={inputStyle}
-          />
-        </FormField>
-
-        <FormField label="English Name">
-          <input
-            type="text"
+            aria-label="Name / English Name"
             value={form.name_en}
             onChange={(event) =>
               setForm({
@@ -263,20 +256,22 @@ export default function NewArtistPage() {
           />
         </FormField>
 
-        <FormField label="Artist Photo URL">
-          <input
-            type="url"
-            value={form.artist_photo_url}
-            onChange={(event) =>
-              setForm({
-                ...form,
-                artist_photo_url: event.target.value,
-              })
-            }
-            style={inputStyle}
-            placeholder="https://..."
-          />
-        </FormField>
+        <ImageUploadField
+          label="Artist Photo"
+          bucket="artworks"
+          folder="artist-photos"
+          value={form.artist_photo_url}
+          disabled={submitting}
+          onPendingChange={setPhotoPending}
+          onChange={(url) =>
+            setForm((current) => ({ ...current, artist_photo_url: url }))
+          }
+        />
+        {photoPending && (
+          <p role="status" style={{ margin: 0, fontSize: "13px" }}>
+            Click Upload Image or clear the selected photo before saving.
+          </p>
+        )}
 
         <FormField label="Nationality">
           <input
@@ -537,7 +532,7 @@ export default function NewArtistPage() {
 
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || photoPending}
           style={{
             marginTop: "6px",
             padding: "11px 14px",

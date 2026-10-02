@@ -2,13 +2,14 @@
 
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Props = {
   label?: string;
   bucket: string;
   value: string;
   onChange: (url: string) => void;
+  onPendingChange?: (pending: boolean) => void;
 
   folder?: string;
   disabled?: boolean;
@@ -29,6 +30,7 @@ export default function ImageUploadField({
   bucket,
   value,
   onChange,
+  onPendingChange,
   folder = "",
   disabled = false,
   required = false,
@@ -40,6 +42,10 @@ export default function ImageUploadField({
   const [previewUrl, setPreviewUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    onPendingChange?.(!!selectedFile || uploading);
+  }, [selectedFile, uploading, onPendingChange]);
 
   function handleFileSelection(file: File | null) {
     setSelectedFile(file);
@@ -182,6 +188,7 @@ export default function ImageUploadField({
         <input
           ref={fileInputRef}
           type="file"
+          aria-label={`${label} file`}
           accept="image/*"
           disabled={disabled || uploading}
           onChange={(event) =>
@@ -276,6 +283,7 @@ export default function ImageUploadField({
 
         <input
           type="url"
+          aria-label={`${label} URL`}
           value={value}
           disabled={disabled || uploading}
           required={required && !selectedFile}
