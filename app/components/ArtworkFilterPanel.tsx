@@ -50,9 +50,9 @@ const categoryOptions = [
 
 const inputStyle = {
   width: "100%",
-  padding: "10px 12px",
+  padding: "12.5px 15px",
   border: "1px solid #bdbdbd",
-  fontSize: "13px",
+  fontSize: "1.015625rem",
   outline: "none",
   boxSizing: "border-box" as const,
 };
@@ -102,13 +102,13 @@ export default function ArtworkFilterPanel({
           style={{
             display: "block",
             width: "100%",
-            padding: "10px 12px",
+            padding: "12.5px 15px",
             border: "1px solid #9c1515",
             background: "white",
             color: "#9c1515",
             textDecoration: "none",
             textAlign: "center",
-            fontSize: "13px",
+            fontSize: "1.015625rem",
             fontWeight: 600,
             boxSizing: "border-box",
           }}
@@ -128,13 +128,13 @@ export default function ArtworkFilterPanel({
           style={{
             display: "block",
             width: "100%",
-            padding: "10px 12px",
+            padding: "12.5px 15px",
             border: "1px solid #bdbdbd",
             background: "white",
             color: "black",
             textDecoration: "none",
             textAlign: "center",
-            fontSize: "13px",
+            fontSize: "1.015625rem",
             boxSizing: "border-box",
           }}
         >
@@ -205,7 +205,7 @@ export default function ArtworkFilterPanel({
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-            gap: "8px",
+            gap: "10px",
           }}
         >
           {["Available", "Sold", "Not Available"].map((status) => {
@@ -224,7 +224,7 @@ export default function ArtworkFilterPanel({
                   )
                 }
                 style={{
-                  padding: "10px 12px",
+                  padding: "12.5px 15px",
                   border:
                     "1px solid #bdbdbd",
                   background: isActive
@@ -234,7 +234,7 @@ export default function ArtworkFilterPanel({
                     ? "white"
                     : "black",
                   cursor: "pointer",
-                  fontSize: "13px",
+                  fontSize: "1.015625rem",
                 }}
               >
                 {status}
@@ -248,14 +248,14 @@ export default function ArtworkFilterPanel({
         <div
           style={{
             border: "1px solid #bdbdbd",
-            padding: "12px",
+            padding: "15px",
             background: "white",
           }}
         >
           <p
             style={{
-              margin: "0 0 12px 0",
-              fontSize: "13px",
+              margin: "0 0 15px 0",
+              fontSize: "1.015625rem",
               fontWeight: 700,
             }}
           >
@@ -272,7 +272,7 @@ export default function ArtworkFilterPanel({
             }
             style={{
               ...inputStyle,
-              marginBottom: "8px",
+              marginBottom: "10px",
             }}
           />
 

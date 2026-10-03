@@ -64,8 +64,8 @@ export default function UserMenu() {
         aria-label="User menu"
         onClick={() => setIsOpen((current) => !current)}
         style={{
-          width: "36px",
-          height: "36px",
+          width: "45px",
+          height: "45px",
           borderRadius: "50%",
           border: "1px solid #bdbdbd",
           background: "#e5e5e5",
@@ -77,8 +77,8 @@ export default function UserMenu() {
         }}
       >
         <svg
-          width="18"
-          height="18"
+          width="22.5"
+          height="22.5"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -95,10 +95,11 @@ export default function UserMenu() {
         <div
           style={{
             position: "absolute",
-            top: "44px",
+            top: "55px",
             right: 0,
-            width: "240px",
-            padding: "14px",
+            width: "300px",
+            maxWidth: "calc(100vw - 32px)",
+            padding: "17.5px",
             border: "1px solid #bdbdbd",
             background: "white",
             zIndex: 1000,
@@ -107,8 +108,8 @@ export default function UserMenu() {
         >
           <p
             style={{
-              margin: "0 0 4px 0",
-              fontSize: "12px",
+              margin: "0 0 5px 0",
+              fontSize: "0.9375rem",
               color: "#777",
             }}
           >
@@ -117,8 +118,8 @@ export default function UserMenu() {
 
           <p
             style={{
-              margin: "0 0 14px 0",
-              fontSize: "13px",
+              margin: "0 0 17.5px 0",
+              fontSize: "1.015625rem",
               overflowWrap: "anywhere",
             }}
           >
@@ -130,12 +131,12 @@ export default function UserMenu() {
             onClick={handleSignOut}
             style={{
               width: "100%",
-              padding: "9px 12px",
+              padding: "11.25px 15px",
               border: "1px solid #bdbdbd",
               background: "#e5e5e5",
               color: "black",
               cursor: "pointer",
-              fontSize: "13px",
+              fontSize: "1.015625rem",
             }}
           >
             Sign Out

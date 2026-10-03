@@ -81,7 +81,7 @@ input, select, textarea { min-width: 0; max-width: 100%; }
 .sidebar {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 15px;
   position: sticky;
   top: 24px;
   min-height: calc(100vh - 96px);
@@ -89,7 +89,7 @@ input, select, textarea { min-width: 0; max-width: 100%; }
 
 .artworks-layout, .artists-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
+  grid-template-columns: minmax(0, 1fr) 325px;
   gap: 32px;
   padding: var(--page-padding);
   max-width: 1600px;
@@ -131,16 +131,17 @@ input, select, textarea { min-width: 0; max-width: 100%; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  padding: 16px clamp(16px, 4.5vw, 72px);
+  gap: 30px;
+  flex-wrap: wrap;
+  padding: 20px clamp(16px, 4.5vw, 72px);
   border-bottom: 1px solid #ddd;
   background: white;
 }
-.navbar-brand { width: 140px; flex-shrink: 0; }
+.navbar-brand { width: 175px; flex-shrink: 0; }
 .navbar-brand img { display: block; width: 100%; height: auto; }
-.navbar-actions { display: flex; align-items: center; gap: 32px; margin-left: auto; min-width: 0; }
-.navbar-links { display: flex; align-items: center; gap: 32px; }
-.navbar-links a { display: inline-flex; align-items: center; min-height: 44px; }
+.navbar-actions { display: flex; align-items: center; gap: 40px; margin-left: auto; min-width: 0; }
+.navbar-links { display: flex; align-items: center; flex-wrap: wrap; gap: 40px; }
+.navbar-links a { display: inline-flex; align-items: center; min-height: 55px; }
 
 .price-list-option {
   display: grid;
@@ -153,11 +154,14 @@ input, select, textarea { min-width: 0; max-width: 100%; }
   .artist-works-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
-@media screen and (max-width: 900px) {
+@media screen and (max-width: 1000px) {
   .artworks-layout, .artists-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; }
   .artworks-layout > .sidebar, .artists-layout > .sidebar { grid-row: 1; }
   .artworks-layout > main, .artists-layout > main { grid-row: 2; }
   .sidebar { position: static; min-height: 0; width: 100%; }
+}
+
+@media screen and (max-width: 900px) {
   .artist-detail-grid { grid-template-columns: minmax(0, 240px) minmax(0, 1fr); gap: 24px; }
 }
 
@@ -165,16 +169,17 @@ input, select, textarea { min-width: 0; max-width: 100%; }
   :root { --page-padding: 24px 16px; --form-page-padding: 24px 16px; }
   .artworks-grid, .artist-works-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 16px; }
   .artwork-detail-grid, .artist-detail-grid { grid-template-columns: minmax(0, 1fr); gap: 24px; }
-  .navbar { gap: 16px; flex-wrap: wrap; }
-  .navbar-actions, .navbar-links { gap: 16px; }
-  .navbar-brand { width: 120px; }
+  .navbar { gap: 20px; }
+  .navbar-actions { flex-basis: 100%; justify-content: space-between; }
+  .navbar-actions, .navbar-links { gap: 20px; }
+  .navbar-brand { width: 150px; }
   /* Keep touch keyboards from zooming into small form controls on iOS. */
   main input:not([type="checkbox"]):not([type="radio"]), main select, main textarea { font-size: 16px !important; }
 }
 
 @media screen and (max-width: 480px) {
   .navbar-actions { flex-basis: 100%; justify-content: space-between; }
-  .navbar-links { flex: 1; justify-content: space-between; gap: 12px; }
+  .navbar-links { flex: 1; justify-content: space-between; gap: 15px; }
   .artworks-grid, .artist-works-grid { grid-template-columns: minmax(0, 1fr); }
   .price-list-option { grid-template-columns: 20px 80px minmax(0, 1fr); gap: 10px; }
   .price-list-option > :last-child { grid-column: 3; text-align: left !important; }

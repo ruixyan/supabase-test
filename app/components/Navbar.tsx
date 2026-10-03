@@ -11,7 +11,7 @@ export default function Navbar() {
     textDecoration: "none",
     color: pathname.startsWith(href) ? "#9c1515" : "black",
     fontWeight: pathname.startsWith(href) ? 600 : 400,
-    fontSize: "14px",
+    fontSize: "1.09375rem",
   });
 
   return (
