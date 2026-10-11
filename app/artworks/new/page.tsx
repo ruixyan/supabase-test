@@ -155,7 +155,6 @@ export default function NewArtworkPage() {
 ${title}${form.year.trim() ? `, ${form.year.trim()}` : ""}
 ${form.material.trim()}
 ${form.dimensions.trim()}
-${marketPrice}
 
 Retail Price: ${marketPrice}
 Cost: ${cost}`;

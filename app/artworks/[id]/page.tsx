@@ -323,12 +323,14 @@ export default function ArtworkDetailPage() {
             ? `￥${Number(form.cost).toLocaleString()}`
             : "";
       
-        const generatedText = [
+        const details = [
           `**${selectedArtistName}**`,
           titleWithYear,
           form.material.trim(),
           form.dimensions.trim(),
-          generatedMarketPrice,
+        ].filter(Boolean).join("\n");
+
+        const prices = [
           generatedMarketPrice
             ? `Retail Price: ${generatedMarketPrice}`
             : "",
@@ -338,6 +340,8 @@ export default function ArtworkDetailPage() {
         ]
           .filter((line) => line !== "")
           .join("\n");
+
+        const generatedText = [details, prices].filter(Boolean).join("\n\n");
       
         setForm((current) => ({
           ...current,

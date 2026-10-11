@@ -36,6 +36,7 @@ type Artwork = {
   material: string | null;
   dimensions: string | null;
   category: string | null;
+  market_price: number | null;
   is_sold: boolean;
   is_unavailable: boolean;
 };
@@ -119,6 +120,7 @@ export default function ArtistDetailPage() {
         material,
         dimensions,
         category,
+        market_price,
         is_unavailable,
         is_sold
       `)
@@ -143,6 +145,7 @@ export default function ArtistDetailPage() {
         material,
         dimensions,
         category,
+        market_price,
         is_unavailable,
         is_sold
       `)
@@ -912,6 +915,11 @@ export default function ArtistDetailPage() {
                               .filter(Boolean)
                               .join(", ")}
                           </p>
+                          {artwork.market_price !== null && (
+                            <p style={{ margin: "8px 0 10px 0", fontSize: "15px", fontWeight: 600, lineHeight: 1.4 }}>
+                              ${artwork.market_price.toLocaleString()}
+                            </p>
+                          )}
                         </div>
                       </label>
                     );
@@ -1116,6 +1124,19 @@ export default function ArtistDetailPage() {
                     }}
                   >
                     {artwork.dimensions}
+                  </p>
+                )}
+
+                {artwork.market_price !== null && (
+                  <p
+                    style={{
+                      margin: "8px 0 10px 0",
+                      fontSize: "15px",
+                      fontWeight: 600,
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    ${artwork.market_price.toLocaleString()}
                   </p>
                 )}
 
