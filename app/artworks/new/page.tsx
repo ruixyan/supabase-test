@@ -144,11 +144,6 @@ export default function NewArtworkPage() {
         ? `$${Number(form.market_price).toLocaleString()}`
         : "";
 
-    const cost =
-      form.cost.trim() !== ""
-        ? `￥${Number(form.cost).toLocaleString()}`
-        : "";
-
     const title = form.title_en.trim() || form.title_jp.trim();
 
     const generatedText = `**${artistDisplayName}**
@@ -156,8 +151,7 @@ ${title}${form.year.trim() ? `, ${form.year.trim()}` : ""}
 ${form.material.trim()}
 ${form.dimensions.trim()}
 
-Retail Price: ${marketPrice}
-Cost: ${cost}`;
+${marketPrice}`;
 
     setForm((current) => ({
       ...current,

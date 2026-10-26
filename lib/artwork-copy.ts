@@ -3,14 +3,14 @@ export function syncRetailPrice(text: string, price: string) {
   const formatted = price.trim() ? `$${Number(price).toLocaleString("en-US")}` : "";
   let hasRetailLine = false;
   const lines = text.split("\n").flatMap((line) => {
-    if (/^\s*Retail Price:/i.test(line)) {
+    if (/^\s*(?:\*\*)?Cost:(?:\*\*)?\s*/i.test(line)) return [];
+    if (/^\s*Retail Price:/i.test(line) || /^\s*\$[\d,.]+\s*$/.test(line)) {
       if (hasRetailLine) return [];
       hasRetailLine = true;
-      return formatted ? [`Retail Price: ${formatted}`] : [];
+      return formatted ? [formatted] : [];
     }
-    if (/^\s*\$[\d,.]+\s*$/.test(line)) return [];
     return [line];
   });
-  if (!hasRetailLine && formatted) lines.push(`Retail Price: ${formatted}`);
+  if (!hasRetailLine && formatted) lines.push(formatted);
   return lines.join("\n").trim();
 }

@@ -174,7 +174,10 @@ export default function ArtworkDetailPage() {
       return;
     }
 
-    setArtwork(data);
+    const copyInfo = data.copy_info?.trim()
+      ? syncRetailPrice(data.copy_info, String(data.market_price ?? ""))
+      : "";
+    setArtwork({ ...data, copy_info: copyInfo });
 
     setForm({
   artist_id: data.artist_id ? String(data.artist_id) : "",
@@ -192,7 +195,7 @@ export default function ArtworkDetailPage() {
   is_unavailable: data.is_unavailable,
   extra_photo_link: data.extra_photo_link || "",
   fact_sheet_link: data.fact_sheet_link || "",
-  copy_info: data.copy_info || "",
+  copy_info: copyInfo,
   is_unique: data.is_unique,
   is_sold: data.is_sold,
   buyer_ids: data.buyer_ids,
@@ -318,11 +321,6 @@ export default function ArtworkDetailPage() {
             ? `$${Number(form.market_price).toLocaleString()}`
             : "";
       
-        const generatedCost =
-          form.cost.trim() !== ""
-            ? `￥${Number(form.cost).toLocaleString()}`
-            : "";
-      
         const details = [
           `**${selectedArtistName}**`,
           titleWithYear,
@@ -330,18 +328,7 @@ export default function ArtworkDetailPage() {
           form.dimensions.trim(),
         ].filter(Boolean).join("\n");
 
-        const prices = [
-          generatedMarketPrice
-            ? `Retail Price: ${generatedMarketPrice}`
-            : "",
-          generatedCost
-            ? `Cost: ${generatedCost}`
-            : "",
-        ]
-          .filter((line) => line !== "")
-          .join("\n");
-
-        const generatedText = [details, prices].filter(Boolean).join("\n\n");
+        const generatedText = [details, generatedMarketPrice].filter(Boolean).join("\n\n");
       
         setForm((current) => ({
           ...current,
