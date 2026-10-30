@@ -26,6 +26,7 @@ type Artwork = {
   artwork_photo_url: string | null;
   title_jp: string | null;
   title_en: string | null;
+  note: string | null;
   year: string | null;
   market_price: number | null;
   material: string | null;
@@ -65,7 +66,7 @@ export default function ArtworksPage() {
   const filteredArtworks = useMemo(() => allArtworks.filter((artwork) => {
     const buyers = Array.isArray(artwork.customers) ? artwork.customers : artwork.customers ? [artwork.customers] : [];
     return matchesSearch(artwork.artist_name, artistSearchText)
-      && [artwork.title_en, artwork.title_jp].some((title) => matchesSearch(title, artworkSearchText))
+      && [artwork.title_en, artwork.title_jp, artwork.note].some((text) => matchesSearch(text, artworkSearchText))
       && (!buyerSearchText.trim() || buyers.some((buyer) => matchesSearch(buyer.name, buyerSearchText)))
       && (activeCategory === "All" || artwork.category === activeCategory)
       && (activeStatus === "All" || (activeStatus === "Sold" ? artwork.is_sold : activeStatus === "Not Available" ? artwork.is_unavailable && !artwork.is_sold : !artwork.is_sold && !artwork.is_unavailable))
@@ -101,7 +102,7 @@ export default function ArtworksPage() {
     let active = true;
     const client = createClient();
     loadAllRows<Artwork>((from, to) => client.from("artworks")
-      .select("id, artist_name, artist_photo_url, artwork_photo_url, title_jp, title_en, year, market_price, material, dimensions, category, is_unique, is_sold, is_unavailable, created_at, customers:artwork_buyers(id, name)", { count: "exact" })
+      .select("id, artist_name, artist_photo_url, artwork_photo_url, title_jp, title_en, note, year, market_price, material, dimensions, category, is_unique, is_sold, is_unavailable, created_at, customers:artwork_buyers(id, name)", { count: "exact" })
       .order("created_at", { ascending: false }).order("id", { ascending: false }).range(from, to))
       .then((data) => { if (active) setAllArtworks(data); })
       .catch((error: Error) => { if (active) setMessage(error.message); })
