@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   distDir: process.env.RESPONSIVE_TEST === "1" ? ".next-responsive" : ".next",
   allowedDevOrigins: process.env.RESPONSIVE_TEST === "1" ? ["127.0.0.1"] : undefined,
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
